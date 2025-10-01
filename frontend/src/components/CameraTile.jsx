@@ -3,11 +3,11 @@ import Hls from "hls.js";
 import { startCloudDetect, stopCloudDetect } from "../utils/cloudDetect.js";
 import { playWebRTC } from "../utils/playWebRTC.js";
 
-// We’ll lazy-load your ESM VideoDetector class from /public (no bundling req)
+// We'll lazy-load your ESM VideoDetector class from utils directory
 let VideoDetectorClassPromise;
 function loadVideoDetector() {
   if (!VideoDetectorClassPromise) {
-    VideoDetectorClassPromise = import("/videoDetector.js").then(m => m.VideoDetector || m.default);
+    VideoDetectorClassPromise = import("../utils/videoDetector.js").then(m => m.VideoDetector || m.default);
   }
   return VideoDetectorClassPromise;
 }
@@ -70,7 +70,7 @@ export default function CameraTile({ cam }) {
           source: cam.stream.type === "hls" || cam.stream.type === "mp4" ? cam.stream.url : undefined,
           id: cam.name,
           mount: v.parentElement,           // mount UI in tile
-          workerUrl: "/worker-client.js",   // your worker
+          workerUrl: "../utils/worker-client.js",   // your worker
           throttleMs: 80,
           onDetections: (boxes) => {
             const any = boxes && boxes.length > 0;

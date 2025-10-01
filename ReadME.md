@@ -3,9 +3,6 @@
     ├── index.html
     ├── package.json
     ├── vite.config.js
-    ├── public/
-    │   ├── videoDetector.js
-    │   └── worker-client.js
     └── src/
         ├── App.jsx
         ├── main.jsx
@@ -22,10 +19,12 @@
         │   ├── Dashboard.jsx
         │   └── Login.jsx
         ├── store/
-        │   └── cameras.js
+        │   └── cameras.jsx
         └── utils/
             ├── cloudDetect.js
-            └── playWebRTC.js
+            ├── playWebRTC.js
+            ├── videoDetector.js
+            └── worker-client.js
     backend/
     ├── .env
     ├── package.json
@@ -78,10 +77,6 @@ here’s a clean “what-does-what” you can paste into your README.
 * **package.json** — Frontend dependencies and scripts (`dev`, `build`, `preview`).
 * **vite.config.js** — Vite config; includes React plugin and COOP/COEP headers for in-browser ONNX.
 
-### public/
-
-* **videoDetector.js** — Your in-browser ONNX detector module (imports ORT worker, runs local detections on a video element/stream).
-* **worker-client.js** — Web worker that loads the ONNX model and does inference off the main thread.
 
 ### src/
 
@@ -125,6 +120,8 @@ here’s a clean “what-does-what” you can paste into your README.
 * **playWebRTC.js** — Minimal WHEP client:
 
   * Creates `RTCPeerConnection`, sends offer to `http://<gateway>/<name>/whep`, sets remote answer, and returns a `MediaStream`.
+* **videoDetector.js** — Your in-browser ONNX detector module (imports ORT worker, runs local detections on a video element/stream).
+* **worker-client.js** — Web worker that loads the ONNX model and does inference off the main thread.
 
 ---
 
@@ -190,7 +187,7 @@ here’s a clean “what-does-what” you can paste into your README.
 
 ## FLOW
 
-* **Frontend local detection flow**: `CameraTile` → `playWebRTC()` (MediaMTX WHEP) → attach `<video>` → `videoDetector.js` runs ONNX in browser → updates tile/status.
+* **Frontend local detection flow**: `CameraTile` → `playWebRTC()` (MediaMTX WHEP) → attach `<video>` → `videoDetector.js`  runs ONNX in browser → updates tile/status.
 * **Frontend cloud detection flow**: `CameraTile` → play stream (WebRTC/HLS) → `cloudDetect.js` captures frames → hits **AWS endpoint** → updates tile/status.
 * **Backend control plane**: CRUD cameras in SQLite via Prisma; starts MediaMTX; for `CLOUD` cameras, `cloudDetector.js` samples frames server-side and posts to AWS (optional if you keep client-side sampling).
 
