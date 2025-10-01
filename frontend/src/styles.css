@@ -1,0 +1,56 @@
+:root { --bg:#0f1115; --panel:#171a21; --muted:#8a8f98; --hi:#6bcf76; --danger:#ff6666; --ink:#e7eaf0; }
+*{ box-sizing:border-box }
+body{ margin:0; background:var(--bg); color:var(--ink); font:14px/1.4 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial }
+
+.shell{ display:grid; grid-template-columns: 240px 1fr; height:100vh; }
+.sidenav{ background:var(--panel); padding:18px; display:flex; flex-direction:column; gap:16px; }
+.sidenav .brand{ font-weight:800; font-size:20px; }
+.sidenav nav{ display:flex; flex-direction:column; gap:10px; }
+.sidenav nav a{ color:var(--muted); text-decoration:none; padding:8px 10px; border-radius:10px; }
+.sidenav nav a.active, .sidenav nav a:hover{ background:#222630; color:#fff; }
+.sidenav-footer{ margin-top:auto; display:flex; flex-direction:column; gap:8px; }
+.sidenav button{ background:#2a2f3a; color:#fff; border:none; padding:8px 12px; border-radius:10px; cursor:pointer; }
+
+.main{ display:flex; flex-direction:column; height:100vh; }
+.toolbar{ display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid #222630; }
+.toolbar .grow{ flex:1 }
+.toolbar button{ background:#3a4252; border:0; color:#fff; padding:8px 12px; border-radius:10px; }
+
+.content{ display:grid; grid-template-columns: 1fr 360px; gap:16px; padding:16px; min-height:0; }
+.grid{ display:grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 220px; gap:12px; overflow:auto; padding-right:6px; }
+.tile{ background:#0c0e12; border:1px solid #222630; border-radius:14px; display:flex; flex-direction:column; overflow:hidden; }
+.tile-header{ display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#121622; }
+.tile-header .name{ font-weight:700 }
+.pill{ font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #2e3542; }
+.pill.ok{ background:#1f2a22; color:var(--hi); border-color:#25412a }
+.pill.bad{ background:#2a1e1e; color:#ff8c8c; border-color:#5d3434 }
+.video-wrap{ position:relative; flex:1; background:#000 }
+video{ display:block; width:100%; height:100%; object-fit:cover; }
+.meta{ display:flex; gap:8px; justify-content:space-between; align-items:center; padding:8px 10px; color:#c9ced6 }
+.flag{ padding:2px 6px; border-radius:6px; border:1px solid #2e3542; }
+.flag.fire{ background:#3d2222; color:#ff7d7d; border-color:#5d3434 }
+.loc{ color:#a9b0bb }
+
+.status{ background:#0c0e12; border:1px solid #222630; border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+.status-header{ padding:10px 12px; border-bottom:1px solid #222630; }
+.table-wrap{ overflow:auto; }
+.table{ width:100%; border-collapse:collapse; font-size:13px; }
+.table th, .table td{ text-align:left; border-bottom:1px solid #202531; padding:8px 10px; color:#d5d9e0 }
+.table th{ color:#96a0ad; font-weight:600 }
+
+.login{ display:grid; place-items:center; height:100vh; background:radial-gradient(1000px 1000px at 50% -20%, #1b1f2b, #0f1115); }
+.login-card{ background:#121622; padding:28px; border-radius:16px; width:320px; display:flex; flex-direction:column; gap:12px; border:1px solid #222630 }
+.login-card h1{ margin:0 }
+.login-card .sub{ margin:0; color:#aab2bf }
+.login-card input{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid #2a3140; background:#0f1320; color:#fff; }
+.login-card button{ padding:10px 12px; border-radius:10px; background:#3a4252; color:#fff; border:0; cursor:pointer }
+.login-card .hint{ color:#7c8596; font-size:12px; }
+
+.modal{ position:fixed; inset:0; background:#0009; display:grid; place-items:center; }
+.modal-card{ background:#121622; width:560px; max-width:92vw; padding:16px; border-radius:14px; border:1px solid #222630; }
+.form{ display:flex; flex-direction:column; gap:10px; }
+.row{ display:flex; flex-direction:column; gap:6px; }
+.row.two{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+.actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+.form input, .form select{ padding:8px 10px; border-radius:10px; border:1px solid #2a3140; background:#0f1320; color:#fff; }
+.form button{ padding:8px 12px; border-radius:10px; background:#3a4252; color:#fff; border:0; cursor:pointer }
