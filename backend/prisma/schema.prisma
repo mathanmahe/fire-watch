@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Camera {
+  id         Int          @id @default(autoincrement()) // (1) primary key
+  camera     String                                       // (2) camera (unique name)
+  location   String?                                       // (3) location
+  ip         String?                                       // (4) ip address
+  username   String?                                       // (5) username
+  password   String?                                       // (6) password (store encrypted in prod)
+  detection  DetectionType @default(LOCAL)                 // LOCAL or CLOUD
+  streamType StreamType    @default(WEBRTC)                // WEBRTC or HLS
+  streamName String?                                        // MediaMTX path (e.g. cam1)
+  hlsUrl     String?                                        // optional direct HLS
+  webrtcBase String?                                        // e.g. http://127.0.0.1:8889
+  isActive   Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([camera])
+}
+
+enum DetectionType {
+  LOCAL
+  CLOUD
+}
+
+enum StreamType {
+  WEBRTC
+  HLS
+}
+
+/**
+ * Optional future table: time-series-like detections.
+ * Keep it simple for SQLite. You can migrate this to Timescale later.
+ */
+model Detection {
+  id        Int      @id @default(autoincrement())
+  cameraId  Int
+  ts        DateTime @default(now())
+  isFire    Boolean
+  score     Float?
+  boxesJson String?  // JSON stringified boxes if needed
+
+  camera Camera @relation(fields: [cameraId], references: [id], onDelete: Cascade)
+
+  @@index([cameraId, ts])
+  @@index([ts])
+}
