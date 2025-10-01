@@ -188,7 +188,7 @@ here’s a clean “what-does-what” you can paste into your README.
 
 ---
 
-## How pieces talk (quick flow)
+## FLOW
 
 * **Frontend local detection flow**: `CameraTile` → `playWebRTC()` (MediaMTX WHEP) → attach `<video>` → `videoDetector.js` runs ONNX in browser → updates tile/status.
 * **Frontend cloud detection flow**: `CameraTile` → play stream (WebRTC/HLS) → `cloudDetect.js` captures frames → hits **AWS endpoint** → updates tile/status.
