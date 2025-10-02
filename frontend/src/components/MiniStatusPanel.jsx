@@ -1,5 +1,7 @@
 import React from "react";
 import { useCameras } from "../store/cameras.jsx";
+import StreamingIcon from "./StreamingIcon.jsx";
+import FireStatusButton from "./FireStatusButton.jsx";
 
 export default function MiniStatusPanel() {
   const { cameras } = useCameras();
@@ -27,17 +29,12 @@ export default function MiniStatusPanel() {
           <div key={cam.id} className="mini-status-item">
             <span className="camera-name">{cam.name}</span>
             <div className="status-icons">
-              <span className={`fire-icon ${cam.isFire ? 'fire' : 'clear'}`}>
-                {cam.isFire ? '🔥' : '✅'}
-              </span>
-              <span className={`stream-icon ${cam.isStreaming ? 'streaming' : 'offline'}`}>
-                {!cam.isStreaming ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                    <path d="M8 21l4-7 4 7"/>
-                  </svg>
-                ) : null}
-              </span>
+              {cam.isFire ? (
+                <span className="fire-icon fire">🔥</span>
+              ) : (
+                <FireStatusButton isFire={false} />
+              )}
+              <StreamingIcon isStreaming={cam.isStreaming} size={12} />
             </div>
           </div>
         ))}

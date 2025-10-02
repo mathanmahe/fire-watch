@@ -1,5 +1,7 @@
 import React from "react";
 import { useCameras } from "../store/cameras.jsx";
+import StreamingIcon from "../components/StreamingIcon.jsx";
+import FireStatusButton from "../components/FireStatusButton.jsx";
 
 const StatusBadge = ({ label, active, isFire = false }) => {
   const getBadgeStyle = () => {
@@ -67,10 +69,10 @@ export default function Status() {
                         </td>
                       ))}
                       <td>
-                        <StatusBadge active={c._runtime?.isStreaming ?? true} />
+                        <StreamingIcon isStreaming={c._runtime?.isStreaming ?? true} size={14} />
                       </td>
                       <td>
-                        <StatusBadge active={c._runtime?.isFire ?? false} isFire />
+                        <FireStatusButton isFire={c._runtime?.isFire ?? false} />
                       </td>
                       <td>
                         <StatusBadge active={c._runtime?.isView ?? true} />

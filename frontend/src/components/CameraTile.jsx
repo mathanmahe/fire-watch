@@ -3,6 +3,8 @@ import Hls from "hls.js";
 import { startCloudDetect, stopCloudDetect } from "../utils/cloudDetect.js";
 import { playWebRTC } from "../utils/playWebRTC.js";
 import { useCameras } from "../store/cameras.jsx";
+import StreamingIcon from "./StreamingIcon.jsx";
+import FireStatusButton from "./FireStatusButton.jsx";
 
 // We'll lazy-load your ESM VideoDetector class from utils directory
 let VideoDetectorClassPromise;
@@ -16,7 +18,7 @@ function loadVideoDetector() {
 export default function CameraTile({ cam }) {
   const videoRef = useRef(null);
   const [status, setStatus] = useState("Idle");
-  const [isFire, setIsFire] = useState(false);
+  const [isFire, setIsFire] = useState(false); // can set this to true if you want to show the fire status button
   const [isStreaming, setIsStreaming] = useState(false);
   const [viewed, setViewed] = useState(true); // you can wire this to visibility/selection
   const { updateCameraStatus } = useCameras();
@@ -92,7 +94,7 @@ export default function CameraTile({ cam }) {
             if (cancelled) return;
             const any = boxes && boxes.length > 0;
             setIsFire(any);
-            setStatus(any ? `🔥 ${boxes.length} detections` : "✅ No fire detected");
+            // Don't update status for fire detection - keep it separate
           }
         });
         detectorRef.current = d;
@@ -113,7 +115,7 @@ export default function CameraTile({ cam }) {
             if (cancelled) return;
             const any = !!(r?.isFire || (r?.detections?.length > 0));
             setIsFire(any);
-            setStatus(any ? "🔥 Fire detected" : "✅ No fire detected");
+            // Don't update status for fire detection - keep it separate
           },
           onError: (e) => {
             if (!cancelled) setStatus(`Cloud error: ${e?.message || e}`);
@@ -137,16 +139,22 @@ export default function CameraTile({ cam }) {
   return (
     <div className="tile">
       <div className="tile-header">
-        <span className="name">{cam.name}</span>
-        <span className={`pill ${isStreaming ? "ok" : "bad"}`}>{isStreaming ? "Live" : "Down"}</span>
+        <div className="tile-title">
+          <span className="name">{cam.name}</span>
+          <span className="location">{cam.location}</span>
+        </div>
+        <div className="tile-status-icons">
+          <FireStatusButton isFire={isFire} />
+          <StreamingIcon isStreaming={isStreaming} size={12} />
+        </div>
       </div>
       <div className="video-wrap" onMouseEnter={()=>setViewed(true)}>
         <video ref={videoRef} muted playsInline />
-      </div>
-      <div className="meta">
-        <span>{status}</span>
-        <span className={`flag ${isFire ? "fire" : ""}`}>{isFire ? "FIRE" : "CLEAR"}</span>
-        <span className="loc">{cam.location}</span>
+        {status !== "Streaming…" && status !== "Idle" && (
+          <div className="status-overlay">
+            <span className="status-message">{status}</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,16 @@
+/**
+ * StatusPanel Component
+ * 
+ * NOTE: This component is no longer used in the application.
+ * The status functionality has been moved to pages/Status.jsx
+ * 
+ * @deprecated Use pages/Status.jsx instead
+ */
+
 import React from "react";
 import { useCameras } from "../store/cameras.jsx";
+import StreamingIcon from "./StreamingIcon.jsx";
+import FireStatusButton from "./FireStatusButton.jsx";
 
 const StatusBadge = ({ label, active, isFire = false }) => {
   const getBadgeStyle = () => {
@@ -89,10 +100,10 @@ export default function StatusPanel() {
           </td>
         ))}
         <td style={{ textAlign: 'left', borderBottom: '1px solid #202531', padding: '12px 16px', color: '#d5d9e0' }}>
-          <StatusBadge active={c._runtime?.isStreaming ?? true} />
+          <StreamingIcon isStreaming={c._runtime?.isStreaming ?? true} size={14} />
         </td>
         <td style={{ textAlign: 'left', borderBottom: '1px solid #202531', padding: '12px 16px', color: '#d5d9e0' }}>
-          <StatusBadge active={c._runtime?.isFire ?? false} isFire />
+          <FireStatusButton isFire={c._runtime?.isFire ?? false} />
         </td>
         <td style={{ textAlign: 'left', borderBottom: '1px solid #202531', padding: '12px 16px', color: '#d5d9e0' }}>
           <StatusBadge active={c._runtime?.isView ?? true} />
