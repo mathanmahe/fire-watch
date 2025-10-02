@@ -15,6 +15,29 @@ body{ margin:0; background:var(--bg); color:var(--ink); font:14px/1.4 ui-sans-se
 .toolbar{ display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid #222630; }
 .toolbar .grow{ flex:1 }
 .toolbar button{ background:#3a4252; border:0; color:#fff; padding:8px 12px; border-radius:10px; }
+.toolbar .view-controls{ display:flex; gap:4px; }
+.toolbar .view-btn{ 
+  background:#2a2f3a; 
+  border:1px solid #3a4252; 
+  color:#8a8f98; 
+  padding:8px; 
+  border-radius:8px; 
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s ease;
+}
+.toolbar .view-btn:hover{ 
+  background:#3a4252; 
+  color:#fff; 
+  border-color:#4a5568;
+}
+.toolbar .view-btn.active{ 
+  background:#3a4252; 
+  color:#fff; 
+  border-color:#6bcf76;
+}
 
 .content{ display:grid; grid-template-columns: 1fr 360px; gap:16px; padding:16px; min-height:0; }
 .grid{ display:grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 220px; gap:12px; overflow:auto; padding-right:6px; }
@@ -69,10 +92,93 @@ video{ display:block; width:100%; height:100%; object-fit:cover; }
 @media (max-width: 480px) {
   .grid{ grid-template-columns: 1fr; }
   .content{ grid-template-columns: 1fr; }
+  .single-view .tile {
+    height: 400px;
+    max-height: calc(100vh - 150px);
+  }
+  .toolbar .view-controls {
+    gap: 2px;
+  }
+  .toolbar .view-btn {
+    padding: 6px;
+  }
 }
 .content--single {
     grid-template-columns: 1fr !important;
   }
+
+.single-view {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 16px;
+  position: relative;
+}
+
+.single-view .tile {
+  max-width: 800px;
+  width: 100%;
+  height: 600px;
+  max-height: calc(100vh - 200px);
+}
+
+.single-view .video-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+.single-view-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.camera-nav {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(12, 14, 18, 0.9);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #222630;
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+.nav-btn {
+  background: #2a2f3a;
+  border: 1px solid #3a4252;
+  color: #8a8f98;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: #3a4252;
+  color: #fff;
+  border-color: #4a5568;
+}
+
+.camera-counter {
+  color: #d5d9e0;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
 
 .main > .content { flex: 1; min-width: 0; }  /* belt-and-suspenders */
 
