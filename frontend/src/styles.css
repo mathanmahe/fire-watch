@@ -1,21 +1,157 @@
-:root { --bg:#0f1115; --panel:#171a21; --muted:#8a8f98; --hi:#6bcf76; --danger:#ff6666; --ink:#e7eaf0; }
+/* ==========================================================================
+   CSS VARIABLES & BASE STYLES
+   ========================================================================== */
+
+:root { 
+  --bg:#0f1115; 
+  --panel:#171a21; 
+  --muted:#8a8f98; 
+  --hi:#6bcf76; 
+  --danger:#ff6666; 
+  --ink:#e7eaf0; 
+}
+
 *{ box-sizing:border-box }
-body{ margin:0; background:var(--bg); color:var(--ink); font:14px/1.4 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial }
 
-.shell{ display:grid; grid-template-columns: 240px 1fr; height:100vh; }
-.sidenav{ background:var(--panel); padding:18px; display:flex; flex-direction:column; gap:16px; }
-.sidenav .brand{ font-weight:800; font-size:20px; }
-.sidenav nav{ display:flex; flex-direction:column; gap:10px; }
-.sidenav nav a{ color:var(--muted); text-decoration:none; padding:8px 10px; border-radius:10px; }
-.sidenav nav a.active, .sidenav nav a:hover{ background:#222630; color:#fff; }
-.sidenav-footer{ margin-top:auto; display:flex; flex-direction:column; gap:8px; }
-.sidenav button{ background:#2a2f3a; color:#fff; border:none; padding:8px 12px; border-radius:10px; cursor:pointer; }
+body{ 
+  margin:0; 
+  background:var(--bg); 
+  color:var(--ink); 
+  font:14px/1.4 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial 
+}
 
-.main{ display:flex; flex-direction:column; height:100vh; }
-.toolbar{ display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid #222630; }
-.toolbar .grow{ flex:1 }
-.toolbar button{ background:#3a4252; border:0; color:#fff; padding:8px 12px; border-radius:10px; }
-.toolbar .view-controls{ display:flex; gap:4px; }
+/* ==========================================================================
+   MAIN LAYOUT COMPONENTS
+   ========================================================================== */
+
+.shell{ 
+  display:grid; 
+  grid-template-columns: 240px 1fr; 
+  height:100vh; 
+}
+
+.main{ 
+  display:flex; 
+  flex-direction:column; 
+  height:100vh; 
+}
+
+.main > .content { 
+  flex: 1; 
+  min-width: 0; 
+}
+
+.content{ 
+  display:grid; 
+  grid-template-columns: 1fr 360px; 
+  gap:16px; 
+  padding:16px; 
+  min-height:0; 
+}
+
+.content--grid{ 
+  grid-template-columns: 1fr; 
+}
+
+.content--with-status{ 
+  grid-template-columns: 1fr 280px; 
+}
+
+.content--single {
+  grid-template-columns: 1fr !important;
+}
+
+.content--single-with-status {
+  grid-template-columns: 1fr 280px !important;
+}
+
+.page-max {
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   SIDE NAVIGATION COMPONENT
+   ========================================================================== */
+
+.sidenav{ 
+  background:var(--panel); 
+  padding:18px; 
+  display:flex; 
+  flex-direction:column; 
+  gap:16px; 
+}
+
+.sidenav .brand{ 
+  font-weight:800; 
+  font-size:20px; 
+}
+
+.sidenav nav{ 
+  display:flex; 
+  flex-direction:column; 
+  gap:10px; 
+}
+
+.sidenav nav a{ 
+  color:var(--muted); 
+  text-decoration:none; 
+  padding:8px 10px; 
+  border-radius:10px; 
+}
+
+.sidenav nav a.active, 
+.sidenav nav a:hover{ 
+  background:#222630; 
+  color:#fff; 
+}
+
+.sidenav-footer{ 
+  margin-top:auto; 
+  display:flex; 
+  flex-direction:column; 
+  gap:8px; 
+}
+
+.sidenav button{ 
+  background:#2a2f3a; 
+  color:#fff; 
+  border:none; 
+  padding:8px 12px; 
+  border-radius:10px; 
+  cursor:pointer; 
+}
+
+/* ==========================================================================
+   TOOLBAR COMPONENT
+   ========================================================================== */
+
+.toolbar{ 
+  display:flex; 
+  align-items:center; 
+  gap:12px; 
+  padding:16px 20px; 
+  border-bottom:1px solid #222630; 
+}
+
+.toolbar .grow{ 
+  flex:1 
+}
+
+.toolbar button{ 
+  background:#3a4252; 
+  border:0; 
+  color:#fff; 
+  padding:8px 12px; 
+  border-radius:10px; 
+}
+
+.toolbar .view-controls{ 
+  display:flex; 
+  gap:4px; 
+}
+
 .toolbar .view-btn{ 
   background:#2a2f3a; 
   border:1px solid #3a4252; 
@@ -28,104 +164,113 @@ body{ margin:0; background:var(--bg); color:var(--ink); font:14px/1.4 ui-sans-se
   justify-content:center;
   transition:all 0.2s ease;
 }
+
 .toolbar .view-btn:hover{ 
   background:#3a4252; 
   color:#fff; 
   border-color:#4a5568;
 }
+
 .toolbar .view-btn.active{ 
   background:#3a4252; 
   color:#fff; 
   border-color:#6bcf76;
 }
 
-.content{ display:grid; grid-template-columns: 1fr 360px; gap:16px; padding:16px; min-height:0; }
-.content--grid{ grid-template-columns: 1fr; }
-.content--with-status{ grid-template-columns: 1fr 280px; }
-.grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); grid-auto-rows: 220px; gap:12px; overflow:auto; padding-right:6px; }
-.tile{ background:#0c0e12; border:1px solid #222630; border-radius:14px; display:flex; flex-direction:column; overflow:hidden; }
-.tile-header{ display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#121622; }
-.tile-header .name{ font-weight:700 }
-.pill{ font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #2e3542; }
-.pill.ok{ background:#1f2a22; color:var(--hi); border-color:#25412a }
-.pill.bad{ background:#2a1e1e; color:#ff8c8c; border-color:#5d3434 }
-.video-wrap{ position:relative; flex:1; background:#000 }
-video{ display:block; width:100%; height:100%; object-fit:cover; }
-.meta{ display:flex; gap:8px; justify-content:space-between; align-items:center; padding:8px 10px; color:#c9ced6 }
-.flag{ padding:2px 6px; border-radius:6px; border:1px solid #2e3542; }
-.flag.fire{ background:#3d2222; color:#ff7d7d; border-color:#5d3434 }
-.loc{ color:#a9b0bb }
+/* ==========================================================================
+   CAMERA GRID & TILES COMPONENTS
+   ========================================================================== */
 
-.status{ background:#0c0e12; border:1px solid #222630; border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
-.status-header{ padding:10px 12px; border-bottom:1px solid #222630; }
-.table-wrap{ overflow:auto; }
-.table{ width:100%; border-collapse:collapse; font-size:13px; }
-.table th, .table td{ text-align:left; border-bottom:1px solid #202531; padding:8px 10px; color:#d5d9e0 }
-.table th{ color:#96a0ad; font-weight:600 }
-
-.login{ display:grid; place-items:center; height:100vh; background:radial-gradient(1000px 1000px at 50% -20%, #1b1f2b, #0f1115); }
-.login-card{ background:#121622; padding:28px; border-radius:16px; width:320px; display:flex; flex-direction:column; gap:12px; border:1px solid #222630 }
-.login-card h1{ margin:0 }
-.login-card .sub{ margin:0; color:#aab2bf }
-.login-card input{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid #2a3140; background:#0f1320; color:#fff; }
-.login-card button{ padding:10px 12px; border-radius:10px; background:#3a4252; color:#fff; border:0; cursor:pointer }
-.login-card .hint{ color:#7c8596; font-size:12px; }
-
-.modal{ position:fixed; inset:0; background:#0009; display:grid; place-items:center; }
-.modal-card{ background:#121622; width:560px; max-width:92vw; padding:16px; border-radius:14px; border:1px solid #222630; }
-.form{ display:flex; flex-direction:column; gap:10px; }
-.row{ display:flex; flex-direction:column; gap:6px; }
-.row.two{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
-.actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
-.form input, .form select{ padding:8px 10px; border-radius:10px; border:1px solid #2a3140; background:#0f1320; color:#fff; }
-.form button{ padding:8px 12px; border-radius:10px; background:#3a4252; color:#fff; border:0; cursor:pointer }
-
-/* Responsive styles for StatusPanel */
-@media (max-width: 1200px) {
-  .shell{ grid-template-columns: 200px 1fr; }
+.grid{ 
+  display:grid; 
+  grid-template-columns: repeat(3, 1fr); 
+  grid-auto-rows: 280px; 
+  gap:16px; 
+  overflow:auto; 
+  padding-right:6px; 
 }
 
-@media (max-width: 768px) {
-  .shell{ grid-template-columns: 1fr; }
-  .sidenav{ display:none; }
-  .grid{ grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-  .content--with-status{ grid-template-columns: 1fr; }
-  .content--single-with-status{ grid-template-columns: 1fr !important; }
-  .mini-status-panel{ 
-    order: -1; 
-    margin-bottom: 16px;
-    max-height: 200px;
-  }
+.tile{ 
+  background:#0c0e12; 
+  border:1px solid #222630; 
+  border-radius:14px; 
+  display:flex; 
+  flex-direction:column; 
+  overflow:hidden; 
 }
 
-@media (max-width: 480px) {
-  .grid{ grid-template-columns: 1fr; }
-  .content{ grid-template-columns: 1fr; }
-  .content--single-with-status{ grid-template-columns: 1fr !important; }
-  .single-view {
-    padding: 8px;
-  }
-  .single-view .tile {
-    height: calc(100% - 52px);
-  }
-  .camera-nav {
-    height: 40px;
-    padding: 6px 12px;
-  }
-  .toolbar .view-controls {
-    gap: 2px;
-  }
-  .toolbar .view-btn {
-    padding: 6px;
-  }
+.tile-header{ 
+  display:flex; 
+  justify-content:space-between; 
+  align-items:center; 
+  padding:8px 10px; 
+  background:#121622; 
 }
-.content--single {
-    grid-template-columns: 1fr !important;
-  }
 
-.content--single-with-status {
-  grid-template-columns: 1fr 280px !important;
+.tile-header .name{ 
+  font-weight:700 
 }
+
+.pill{ 
+  font-size:12px; 
+  padding:2px 8px; 
+  border-radius:999px; 
+  border:1px solid #2e3542; 
+}
+
+.pill.ok{ 
+  background:#1f2a22; 
+  color:var(--hi); 
+  border-color:#25412a 
+}
+
+.pill.bad{ 
+  background:#2a1e1e; 
+  color:#ff8c8c; 
+  border-color:#5d3434 
+}
+
+.video-wrap{ 
+  position:relative; 
+  flex:1; 
+  background:#000 
+}
+
+video{ 
+  display:block; 
+  width:100%; 
+  height:100%; 
+  object-fit:cover; 
+}
+
+.meta{ 
+  display:flex; 
+  gap:8px; 
+  justify-content:space-between; 
+  align-items:center; 
+  padding:8px 10px; 
+  color:#c9ced6 
+}
+
+.flag{ 
+  padding:2px 6px; 
+  border-radius:6px; 
+  border:1px solid #2e3542; 
+}
+
+.flag.fire{ 
+  background:#3d2222; 
+  color:#ff7d7d; 
+  border-color:#5d3434 
+}
+
+.loc{ 
+  color:#a9b0bb 
+}
+
+/* ==========================================================================
+   SINGLE CAMERA VIEW COMPONENT
+   ========================================================================== */
 
 .single-view {
   display: flex;
@@ -207,6 +352,48 @@ video{ display:block; width:100%; height:100%; object-fit:cover; }
   text-align: center;
 }
 
+/* ==========================================================================
+   STATUS PANEL COMPONENTS
+   ========================================================================== */
+
+.status{ 
+  background:#0c0e12; 
+  border:1px solid #222630; 
+  border-radius:14px; 
+  overflow:hidden; 
+  display:flex; 
+  flex-direction:column; 
+}
+
+.status-header{ 
+  padding:10px 12px; 
+  border-bottom:1px solid #222630; 
+}
+
+.table-wrap{ 
+  overflow:auto; 
+}
+
+.table{ 
+  width:100%; 
+  border-collapse:collapse; 
+  font-size:13px; 
+}
+
+.table th, 
+.table td{ 
+  text-align:left; 
+  border-bottom:1px solid #202531; 
+  padding:8px 10px; 
+  color:#d5d9e0 
+}
+
+.table th{ 
+  color:#96a0ad; 
+  font-weight:600 
+}
+
+/* Mini Status Panel */
 .mini-status-panel {
   background: #0c0e12;
   border: 1px solid #222630;
@@ -310,15 +497,10 @@ video{ display:block; width:100%; height:100%; object-fit:cover; }
   font-size: 14px;
 }
 
-.main > .content { flex: 1; min-width: 0; }  /* belt-and-suspenders */
+/* ==========================================================================
+   STATUS PAGE COMPONENT
+   ========================================================================== */
 
-.page-max {
-max-width: 920px;     /* adjust to taste */
-width: 100%;
-margin: 0 auto;       /* center it */
-}
-
-/* Status page specific styles */
 .status-page {
   width: 100%;
   height: 100vh;
@@ -426,4 +608,170 @@ margin: 0 auto;       /* center it */
 
 .status-table td:nth-child(4) {
   min-width: 80px;
+}
+
+/* ==========================================================================
+   LOGIN PAGE COMPONENT
+   ========================================================================== */
+
+.login{ 
+  display:grid; 
+  place-items:center; 
+  height:100vh; 
+  background:radial-gradient(1000px 1000px at 50% -20%, #1b1f2b, #0f1115); 
+}
+
+.login-card{ 
+  background:#121622; 
+  padding:28px; 
+  border-radius:16px; 
+  width:320px; 
+  display:flex; 
+  flex-direction:column; 
+  gap:12px; 
+  border:1px solid #222630 
+}
+
+.login-card h1{ 
+  margin:0 
+}
+
+.login-card .sub{ 
+  margin:0; 
+  color:#aab2bf 
+}
+
+.login-card input{ 
+  width:100%; 
+  padding:10px 12px; 
+  border-radius:10px; 
+  border:1px solid #2a3140; 
+  background:#0f1320; 
+  color:#fff; 
+}
+
+.login-card button{ 
+  padding:10px 12px; 
+  border-radius:10px; 
+  background:#3a4252; 
+  color:#fff; 
+  border:0; 
+  cursor:pointer 
+}
+
+.login-card .hint{ 
+  color:#7c8596; 
+  font-size:12px; 
+}
+
+/* ==========================================================================
+   MODAL COMPONENT
+   ========================================================================== */
+
+.modal{ 
+  position:fixed; 
+  inset:0; 
+  background:#0009; 
+  display:grid; 
+  place-items:center; 
+}
+
+.modal-card{ 
+  background:#121622; 
+  width:560px; 
+  max-width:92vw; 
+  padding:16px; 
+  border-radius:14px; 
+  border:1px solid #222630; 
+}
+
+.form{ 
+  display:flex; 
+  flex-direction:column; 
+  gap:10px; 
+}
+
+.row{ 
+  display:flex; 
+  flex-direction:column; 
+  gap:6px; 
+}
+
+.row.two{ 
+  display:grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap:8px; 
+}
+
+.actions{ 
+  display:flex; 
+  justify-content:flex-end; 
+  gap:8px; 
+  margin-top:6px; 
+}
+
+.form input, 
+.form select{ 
+  padding:8px 10px; 
+  border-radius:10px; 
+  border:1px solid #2a3140; 
+  background:#0f1320; 
+  color:#fff; 
+}
+
+.form button{ 
+  padding:8px 12px; 
+  border-radius:10px; 
+  background:#3a4252; 
+  color:#fff; 
+  border:0; 
+  cursor:pointer 
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+
+/* Large screens - increase tile height to prevent stretching */
+@media (min-width: 500px) {
+  .grid{ grid-auto-rows: 360px; }
+}
+
+@media (max-width: 1200px) {
+  .shell{ grid-template-columns: 200px 1fr; }
+}
+
+@media (max-width: 768px) {
+  .shell{ grid-template-columns: 1fr; }
+  .sidenav{ display:none; }
+  .grid{ grid-template-columns: repeat(2, 1fr); grid-auto-rows: 240px; }
+  .content--with-status{ grid-template-columns: 1fr; }
+  .content--single-with-status{ grid-template-columns: 1fr !important; }
+  .mini-status-panel{ 
+    order: -1; 
+    margin-bottom: 16px;
+    max-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid{ grid-template-columns: 1fr; grid-auto-rows: 200px; }
+  .content{ grid-template-columns: 1fr; }
+  .content--single-with-status{ grid-template-columns: 1fr !important; }
+  .single-view {
+    padding: 8px;
+  }
+  .single-view .tile {
+    height: calc(100% - 52px);
+  }
+  .camera-nav {
+    height: 40px;
+    padding: 6px 12px;
+  }
+  .toolbar .view-controls {
+    gap: 2px;
+  }
+  .toolbar .view-btn {
+    padding: 6px;
+  }
 }
