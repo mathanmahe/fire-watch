@@ -84,7 +84,7 @@ function Dashboard() {
               <button onClick={()=>setShowAdd(true)}>+ Add Camera</button>
             </header>
 
-            <section className={`content ${viewMode === 'single' ? 'content--single' : showStatusPanel ? 'content--with-status' : 'content--grid'}`}>
+            <section className={`content ${viewMode === 'single' ? (showStatusPanel ? 'content--single-with-status' : 'content--single') : showStatusPanel ? 'content--with-status' : 'content--grid'}`}>
               {viewMode === 'grid' ? (
                 <CameraGrid />
               ) : (
@@ -93,7 +93,7 @@ function Dashboard() {
                   onCameraChange={handleCameraChange}
                 />
               )}
-              {showStatusPanel && viewMode === 'grid' && <MiniStatusPanel />}
+              {showStatusPanel && <MiniStatusPanel />}
             </section>
           </>
         ) : (
