@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import SideNav from "../components/SideNav.jsx";
 import CameraGrid from "../components/CameraGrid.jsx";
 import SingleCameraView from "../components/SingleCameraView.jsx";
+import MiniStatusPanel from "../components/MiniStatusPanel.jsx";
 import AddCameraDialog from "../components/AddCameraDialog.jsx";
 import Status from "./Status.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -17,6 +18,7 @@ function Dashboard() {
   const [currentPage, setCurrentPage] = useState('video');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'single'
   const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
+  const [showStatusPanel, setShowStatusPanel] = useState(false);
   const { cameras } = useCameras();
 
   const handleNavigate = (page) => {
@@ -45,7 +47,7 @@ function Dashboard() {
         {currentPage === 'video' ? (
           <>
             <header className="toolbar">
-              <h2>Streams 🔥🧯</h2>
+              <h2>Streams </h2>
               <div className="grow" />
               <div className="view-controls">
                 <button 
@@ -69,11 +71,20 @@ function Dashboard() {
                     <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" fill="none"/>
                   </svg>
                 </button>
+                <button 
+                  className={`view-btn ${showStatusPanel ? 'active' : ''}`}
+                  onClick={() => setShowStatusPanel(!showStatusPanel)}
+                  title="Toggle Status Panel"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h18v2H3v-2zm0 4h18v2H3v-2zm0 4h18v2H3v-2z"/>
+                  </svg>
+                </button>
               </div>
               <button onClick={()=>setShowAdd(true)}>+ Add Camera</button>
             </header>
 
-            <section className={`content ${viewMode === 'single' ? 'content--single' : ''}`}>
+            <section className={`content ${viewMode === 'single' ? 'content--single' : showStatusPanel ? 'content--with-status' : 'content--grid'}`}>
               {viewMode === 'grid' ? (
                 <CameraGrid />
               ) : (
@@ -82,6 +93,7 @@ function Dashboard() {
                   onCameraChange={handleCameraChange}
                 />
               )}
+              {showStatusPanel && viewMode === 'grid' && <MiniStatusPanel />}
             </section>
           </>
         ) : (

@@ -21,12 +21,31 @@ const CamerasCtx = createContext(null);
 
 export function CamerasProvider({ children }) {
   const [cameras, setCameras] = useState(seed);
+  const [cameraStatuses, setCameraStatuses] = useState({});
 
   function addCamera(cam) {
     setCameras(prev => [...prev, { id: cam.name || `cam-${Date.now()}`, ...cam }]);
   }
 
-  const value = useMemo(() => ({ cameras, addCamera, setCameras }), [cameras]);
+  function updateCameraStatus(cameraId, status) {
+    setCameraStatuses(prev => ({
+      ...prev,
+      [cameraId]: { ...prev[cameraId], ...status }
+    }));
+  }
+
+  const camerasWithStatus = cameras.map(cam => ({
+    ...cam,
+    isFire: cameraStatuses[cam.id]?.isFire || false,
+    isStreaming: cameraStatuses[cam.id]?.isStreaming || false
+  }));
+
+  const value = useMemo(() => ({ 
+    cameras: camerasWithStatus, 
+    addCamera, 
+    setCameras, 
+    updateCameraStatus 
+  }), [camerasWithStatus]);
   return <CamerasCtx.Provider value={value}>{children}</CamerasCtx.Provider>;
 }
 

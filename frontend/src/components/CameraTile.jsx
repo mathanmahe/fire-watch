@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { startCloudDetect, stopCloudDetect } from "../utils/cloudDetect.js";
 import { playWebRTC } from "../utils/playWebRTC.js";
+import { useCameras } from "../store/cameras.jsx";
 
 // We'll lazy-load your ESM VideoDetector class from utils directory
 let VideoDetectorClassPromise;
@@ -18,6 +19,7 @@ export default function CameraTile({ cam }) {
   const [isFire, setIsFire] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [viewed, setViewed] = useState(true); // you can wire this to visibility/selection
+  const { updateCameraStatus } = useCameras();
 
   // keep detector instance for local mode
   const detectorRef = useRef(null);
@@ -25,6 +27,11 @@ export default function CameraTile({ cam }) {
   const abortRef = useRef(null);
   // PeerConnection for WebRTC (if used)
   const pcRef = useRef(null);
+
+  // Update camera status in store whenever local state changes
+  useEffect(() => {
+    updateCameraStatus(cam.id, { isFire, isStreaming });
+  }, [isFire, isStreaming, cam.id, updateCameraStatus]);
 
   useEffect(() => {
     const v = videoRef.current;
