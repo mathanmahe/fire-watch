@@ -1,5 +1,5 @@
 import React from "react";
-
+// document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
 export default function SideNav({ onNavigate, onLogout, currentPage }) {
   return (
     <aside className="sidenav">
@@ -18,6 +18,9 @@ export default function SideNav({ onNavigate, onLogout, currentPage }) {
           Status
         </a>
       </nav>
+      <button className="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+      
+
       <div className="sidenav-footer">
         <button onClick={onLogout}>Sign out</button>
       </div>

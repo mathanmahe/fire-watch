@@ -18,8 +18,8 @@ function loadVideoDetector() {
 export default function CameraTile({ cam }) {
   const videoRef = useRef(null);
   const [status, setStatus] = useState("Idle");
-  const [isFire, setIsFire] = useState(false); // can set this to true if you want to show the fire status button
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [isFire, setIsFire] = useState(true); // can set this to true if you want to show the fire status button
+  const [isStreaming, setIsStreaming] = useState(true);
   const [viewed, setViewed] = useState(true); // you can wire this to visibility/selection
   const { updateCameraStatus } = useCameras();
 
