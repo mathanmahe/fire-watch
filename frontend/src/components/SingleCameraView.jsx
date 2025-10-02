@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useCameras } from "../store/cameras.jsx";
 import CameraTile from "./CameraTile.jsx";
 
 export default function SingleCameraView({ selectedCameraIndex = 0, onCameraChange }) {
-  const { cameras } = useCameras();
+  const { cameras, toggleCameraVisibility } = useCameras();
   
   if (!cameras || cameras.length === 0) {
     return (
@@ -15,13 +15,32 @@ export default function SingleCameraView({ selectedCameraIndex = 0, onCameraChan
 
   const selectedCamera = cameras[selectedCameraIndex] || cameras[0];
 
+  // Ensure the currently selected camera is visible
+  useEffect(() => {
+    if (selectedCamera && !selectedCamera.isVisible) {
+      toggleCameraVisibility(selectedCamera.id);
+    }
+  }, [selectedCamera, toggleCameraVisibility]);
+
   const handlePreviousCamera = () => {
     const prevIndex = selectedCameraIndex > 0 ? selectedCameraIndex - 1 : cameras.length - 1;
+    
+    // Hide current camera if it's visible
+    if (selectedCamera && selectedCamera.isVisible) {
+      toggleCameraVisibility(selectedCamera.id);
+    }
+    
     onCameraChange?.(prevIndex);
   };
 
   const handleNextCamera = () => {
     const nextIndex = selectedCameraIndex < cameras.length - 1 ? selectedCameraIndex + 1 : 0;
+    
+    // Hide current camera if it's visible
+    if (selectedCamera && selectedCamera.isVisible) {
+      toggleCameraVisibility(selectedCamera.id);
+    }
+    
     onCameraChange?.(nextIndex);
   };
 

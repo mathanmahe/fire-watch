@@ -2,6 +2,7 @@ import React from "react";
 import { useCameras } from "../store/cameras.jsx";
 import StreamingIcon from "../components/StreamingIcon.jsx";
 import FireStatusButton from "../components/FireStatusButton.jsx";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const StatusBadge = ({ label, active, isFire = false }) => {
   const getBadgeStyle = () => {
@@ -31,6 +32,14 @@ const StatusBadge = ({ label, active, isFire = false }) => {
     <span style={getBadgeStyle()}>
       {active ? "Yes" : "No"}
     </span>
+  );
+};
+
+const ViewingStatusIcon = ({ isVisible }) => {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {isVisible ? <FaEye size={16} /> : <FaEyeSlash size={16} />}
+    </div>
   );
 };
 
@@ -69,13 +78,13 @@ export default function Status() {
                         </td>
                       ))}
                       <td>
-                        <StreamingIcon isStreaming={c._runtime?.isStreaming ?? true} size={14} />
+                        <StreamingIcon isStreaming={c.isStreaming} size={14} />
                       </td>
                       <td>
-                        <FireStatusButton isFire={c._runtime?.isFire ?? false} />
+                        <FireStatusButton isFire={c.isFire} />
                       </td>
                       <td>
-                        <StatusBadge active={c._runtime?.isView ?? true} />
+                        <ViewingStatusIcon isVisible={c.isVisible} />
                       </td>
                     </tr>
                   ))}

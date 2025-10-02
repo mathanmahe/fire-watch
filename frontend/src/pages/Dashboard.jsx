@@ -19,7 +19,7 @@ function Dashboard() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'single'
   const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
   const [showStatusPanel, setShowStatusPanel] = useState(false);
-  const { cameras } = useCameras();
+  const { cameras, toggleCameraVisibility } = useCameras();
 
   const handleNavigate = (page) => {
     setCurrentPage(page);
@@ -29,6 +29,11 @@ function Dashboard() {
     setViewMode(mode);
     if (mode === 'single' && cameras.length > 0) {
       setSelectedCameraIndex(0);
+      // Ensure the selected camera is visible when entering single view mode
+      const selectedCamera = cameras[selectedCameraIndex] || cameras[0];
+      if (selectedCamera && !selectedCamera.isVisible) {
+        toggleCameraVisibility(selectedCamera.id);
+      }
     }
   };
 

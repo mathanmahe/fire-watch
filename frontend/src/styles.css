@@ -289,7 +289,7 @@ body{
   color: #8a8f98;
 }
 
-.pill{ 
+/* .pill{ 
   font-size:12px; 
   padding:2px 8px; 
   border-radius:999px; 
@@ -306,7 +306,7 @@ body{
   background:#2a1e1e; 
   color:#ff8c8c; 
   border-color:#5d3434 
-}
+} */
 
 .video-wrap{ 
   position:relative; 
@@ -321,16 +321,16 @@ video{
   object-fit:cover; 
 }
 
-.meta{ 
+/* .meta{ 
   display:flex; 
   gap:8px; 
   justify-content:space-between; 
   align-items:center; 
   padding:8px 10px; 
   color:#c9ced6 
-}
+} */
 
-.flag{ 
+/* .flag{ 
   padding:2px 6px; 
   border-radius:6px; 
   border:1px solid #2e3542; 
@@ -340,11 +340,11 @@ video{
   background:#3d2222; 
   color:#ff7d7d; 
   border-color:#5d3434 
-}
+} */
 
-.loc{ 
+/* .loc{ 
   color:#a9b0bb 
-}
+} */
 
 /* ==========================================================================
    SINGLE CAMERA VIEW COMPONENT
@@ -434,7 +434,7 @@ video{
    STATUS PANEL COMPONENTS
    ========================================================================== */
 
-.status{ 
+/* .status{ 
   background:#0c0e12; 
   border:1px solid #222630; 
   border-radius:14px; 
@@ -469,7 +469,7 @@ video{
 .table th{ 
   color:#96a0ad; 
   font-weight:600 
-}
+} */
 
 /* Mini Status Panel */
 .mini-status-panel {
@@ -587,6 +587,34 @@ video{
   font-size: 14px;
 }
 
+.visibility-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  color: var(--ink);
+}
+
+.visibility-toggle:hover {
+  background: #2a2d36;
+}
+
+.visibility-toggle.visible {
+  opacity: 1;
+}
+
+.visibility-toggle.hidden {
+  opacity: 0.5;
+}
+
 /* ==========================================================================
    STATUS PAGE COMPONENT
    ========================================================================== */
@@ -672,6 +700,10 @@ video{
   min-width: 100px;
 }
 
+.status-table th:nth-child(5) {
+  text-align: center;
+}
+
 .status-table th:nth-child(4) {
   min-width: 80px;
 }
@@ -700,6 +732,10 @@ video{
   min-width: 80px;
 }
 
+.status-table td:nth-child(5) {
+  text-align: center;
+}
+
 /* Status overlay for video tiles */
 .status-overlay {
   position: absolute;
@@ -712,7 +748,7 @@ video{
   backdrop-filter: blur(4px);
 }
 
-.status-message {
+/* .status-message {
   color: #d5d9e0;
   font-size: 12px;
   font-weight: 500;
@@ -720,7 +756,7 @@ video{
 
 .status-message.fire {
   color: #ff7d7d;
-}
+} */
 
 /* ==========================================================================
    LOGIN PAGE COMPONENT

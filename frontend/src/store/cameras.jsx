@@ -22,6 +22,7 @@ const CamerasCtx = createContext(null);
 export function CamerasProvider({ children }) {
   const [cameras, setCameras] = useState(seed);
   const [cameraStatuses, setCameraStatuses] = useState({});
+  const [cameraVisibility, setCameraVisibility] = useState({});
 
   const addCamera = useMemo(() => (cam) => {
     setCameras(prev => [...prev, { id: cam.name || `cam-${Date.now()}`, ...cam }]);
@@ -34,18 +35,31 @@ export function CamerasProvider({ children }) {
     }));
   }, []);
 
+  const toggleCameraVisibility = useMemo(() => (cameraId) => {
+    setCameraVisibility(prev => {
+      const currentVisibility = prev[cameraId] !== false; // true if undefined or true, false if explicitly false
+      const newVisibility = !currentVisibility;
+      return {
+        ...prev,
+        [cameraId]: newVisibility
+      };
+    });
+  }, []);
+
   const camerasWithStatus = useMemo(() => cameras.map(cam => ({
     ...cam,
     isFire: cameraStatuses[cam.id]?.isFire || false,
-    isStreaming: cameraStatuses[cam.id]?.isStreaming || false
-  })), [cameras, cameraStatuses]);
+    isStreaming: cameraStatuses[cam.id]?.isStreaming || false,
+    isVisible: cameraVisibility[cam.id] !== false // default to true if not set
+  })), [cameras, cameraStatuses, cameraVisibility]);
 
   const value = useMemo(() => ({ 
     cameras: camerasWithStatus, 
     addCamera, 
     setCameras, 
-    updateCameraStatus 
-  }), [camerasWithStatus, addCamera, updateCameraStatus]);
+    updateCameraStatus,
+    toggleCameraVisibility
+  }), [camerasWithStatus, addCamera, updateCameraStatus, toggleCameraVisibility]);
   
   return <CamerasCtx.Provider value={value}>{children}</CamerasCtx.Provider>;
 }
