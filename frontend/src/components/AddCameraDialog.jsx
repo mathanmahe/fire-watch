@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useCameras } from "../store/cameras.js";
+import { useCameras } from "../store/cameras.jsx";
 
 export default function AddCameraDialog({ onClose }) {
   const { addCamera } = useCameras();

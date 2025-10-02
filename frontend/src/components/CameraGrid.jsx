@@ -1,5 +1,5 @@
 import React from "react";
-import { useCameras } from "../store/cameras.js";
+import { useCameras } from "../store/cameras.jsx";
 import CameraTile from "./CameraTile.jsx";
 
 export default function CameraGrid() {

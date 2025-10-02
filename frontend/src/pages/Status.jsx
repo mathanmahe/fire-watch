@@ -1,0 +1,87 @@
+import React from "react";
+import { useCameras } from "../store/cameras.jsx";
+
+const StatusBadge = ({ label, active, isFire = false }) => {
+  const getBadgeStyle = () => {
+    if (isFire) {
+      return {
+        backgroundColor: active ? '#ff6666' : '#6bcf76',
+        color: '#ffffff',
+        padding: '4px 8px',
+        borderRadius: '12px',
+        fontSize: '12px',
+        fontWeight: '500',
+        display: 'inline-block'
+      };
+    }
+    return {
+      backgroundColor: active ? '#6bcf76' : '#ff6666',
+      color: '#ffffff',
+      padding: '4px 8px',
+      borderRadius: '12px',
+      fontSize: '12px',
+      fontWeight: '500',
+      display: 'inline-block'
+    };
+  };
+
+  return (
+    <span style={getBadgeStyle()}>
+      {active ? "Yes" : "No"}
+    </span>
+  );
+};
+
+export default function Status() {
+  const { cameras } = useCameras();
+  
+  return (
+    <div className="status-page">
+      <header className="status-header">
+        <h2>Status</h2>
+      </header>
+
+      <div className="status-content">
+        <div className="status-panel">
+          <div className="status-panel-header">
+            <h3>Camera Status</h3>
+          </div>
+          
+          <div className="status-table-wrapper">
+            <table className="status-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Streaming</th>
+                    <th>Fire</th>
+                    <th>Viewing</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cameras.map(c => (
+                    <tr key={c.id}>
+                      {['name','location'].map((k, i) => (
+                        <td key={i}>
+                          {c[k]}
+                        </td>
+                      ))}
+                      <td>
+                        <StatusBadge active={c._runtime?.isStreaming ?? true} />
+                      </td>
+                      <td>
+                        <StatusBadge active={c._runtime?.isFire ?? false} isFire />
+                      </td>
+                      <td>
+                        <StatusBadge active={c._runtime?.isView ?? true} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+  );
+}
