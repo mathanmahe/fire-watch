@@ -1,9 +1,16 @@
 import React from "react";
-// document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+import { toggleTheme } from "../utils/theme.js";
+
 export default function SideNav({ onNavigate, onLogout, currentPage }) {
+  const [theme, setTheme] = React.useState(
+    document.documentElement.getAttribute("data-theme") || "dark"
+  );
+
+  const onToggle = () => setTheme(toggleTheme());
+
   return (
     <aside className="sidenav">
-      <div className="brand">FireWatch</div>
+      <div className="brand">Fire Watch</div>
       <nav>
         <a 
           className={currentPage === 'video' ? 'active' : ''} 
@@ -18,10 +25,11 @@ export default function SideNav({ onNavigate, onLogout, currentPage }) {
           Status
         </a>
       </nav>
-      <button className="theme-toggle" aria-label="Toggle dark mode">🌙</button>
       
-
       <div className="sidenav-footer">
+        <button className="theme-toggle" onClick={onToggle} aria-label="Toggle theme">
+          {theme === "dark" ? "🌙 Dark" : "☀️ Light"}
+        </button>
         <button onClick={onLogout}>Sign out</button>
       </div>
     </aside>

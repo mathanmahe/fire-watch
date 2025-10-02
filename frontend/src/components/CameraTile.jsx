@@ -18,8 +18,8 @@ function loadVideoDetector() {
 export default function CameraTile({ cam }) {
   const videoRef = useRef(null);
   const [status, setStatus] = useState("Idle");
-  const [isFire, setIsFire] = useState(true); // can set this to true if you want to show the fire status button
-  const [isStreaming, setIsStreaming] = useState(true);
+  const [isFire, setIsFire] = useState(false); // can set this to true if you want to show the fire status button
+  const [isStreaming, setIsStreaming] = useState(false);
   const [viewed, setViewed] = useState(true); // you can wire this to visibility/selection
   const { updateCameraStatus } = useCameras();
 
@@ -145,7 +145,7 @@ export default function CameraTile({ cam }) {
         </div>
         <div className="tile-status-icons">
           <FireStatusButton isFire={isFire} />
-          <StreamingIcon isStreaming={isStreaming} size={12} />
+          <StreamingIcon isStreaming={isStreaming} size={14} />
         </div>
       </div>
       <div className="video-wrap" onMouseEnter={()=>setViewed(true)}>

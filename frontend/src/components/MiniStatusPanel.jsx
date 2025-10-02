@@ -42,7 +42,7 @@ export default function MiniStatusPanel() {
               ) : (
                 <FireStatusButton isFire={false} />
               )}
-              <StreamingIcon isStreaming={cam.isStreaming} size={12} />
+              <StreamingIcon isStreaming={cam.isStreaming} size={14} />
             </div>
           </div>
         ))}
