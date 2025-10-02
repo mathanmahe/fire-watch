@@ -748,7 +748,7 @@ video{
   backdrop-filter: blur(4px);
 }
 
-/* .status-message {
+.status-message {
   color: #d5d9e0;
   font-size: 12px;
   font-weight: 500;
@@ -756,7 +756,7 @@ video{
 
 .status-message.fire {
   color: #ff7d7d;
-} */
+}
 
 /* ==========================================================================
    LOGIN PAGE COMPONENT
