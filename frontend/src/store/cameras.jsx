@@ -23,29 +23,30 @@ export function CamerasProvider({ children }) {
   const [cameras, setCameras] = useState(seed);
   const [cameraStatuses, setCameraStatuses] = useState({});
 
-  function addCamera(cam) {
+  const addCamera = useMemo(() => (cam) => {
     setCameras(prev => [...prev, { id: cam.name || `cam-${Date.now()}`, ...cam }]);
-  }
+  }, []);
 
-  function updateCameraStatus(cameraId, status) {
+  const updateCameraStatus = useMemo(() => (cameraId, status) => {
     setCameraStatuses(prev => ({
       ...prev,
       [cameraId]: { ...prev[cameraId], ...status }
     }));
-  }
+  }, []);
 
-  const camerasWithStatus = cameras.map(cam => ({
+  const camerasWithStatus = useMemo(() => cameras.map(cam => ({
     ...cam,
     isFire: cameraStatuses[cam.id]?.isFire || false,
     isStreaming: cameraStatuses[cam.id]?.isStreaming || false
-  }));
+  })), [cameras, cameraStatuses]);
 
   const value = useMemo(() => ({ 
     cameras: camerasWithStatus, 
     addCamera, 
     setCameras, 
     updateCameraStatus 
-  }), [camerasWithStatus]);
+  }), [camerasWithStatus, addCamera, updateCameraStatus]);
+  
   return <CamerasCtx.Provider value={value}>{children}</CamerasCtx.Provider>;
 }
 

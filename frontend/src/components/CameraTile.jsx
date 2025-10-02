@@ -36,12 +36,15 @@ export default function CameraTile({ cam }) {
   useEffect(() => {
     const v = videoRef.current;
     let hls;
+    let cancelled = false;
 
     async function attachStream() {
+      if (cancelled) return;
       setStatus("Connecting…");
       try {
         if (cam.stream.type === "webrtc") {
           const { pc, stream } = await playWebRTC(cam.stream.gatewayBase, cam.stream.name);
+          if (cancelled) return;
           pcRef.current = pc;
           v.srcObject = stream;
           await v.play().catch(()=>{});
@@ -62,17 +65,23 @@ export default function CameraTile({ cam }) {
           v.src = cam.stream.url;
           await v.play().catch(()=>{});
         }
-        setIsStreaming(true);
-        setStatus("Streaming…");
+        if (!cancelled) {
+          setIsStreaming(true);
+          setStatus("Streaming…");
+        }
       } catch (err) {
-        setStatus(`Failed: ${err?.message || err}`);
+        if (!cancelled) {
+          setStatus(`Failed: ${err?.message || err}`);
+        }
       }
     }
 
     // detection wiring
     async function startDetection() {
+      if (cancelled) return;
       if (cam.detection === "local") {
         const VideoDetector = await loadVideoDetector();
+        if (cancelled) return;
         const d = new VideoDetector({
           source: cam.stream.type === "hls" || cam.stream.type === "mp4" ? cam.stream.url : undefined,
           id: cam.name,
@@ -80,6 +89,7 @@ export default function CameraTile({ cam }) {
           workerUrl: "../utils/worker-client.js",   // your worker
           throttleMs: 80,
           onDetections: (boxes) => {
+            if (cancelled) return;
             const any = boxes && boxes.length > 0;
             setIsFire(any);
             setStatus(any ? `🔥 ${boxes.length} detections` : "✅ No fire detected");
@@ -100,11 +110,14 @@ export default function CameraTile({ cam }) {
           endpoint: cam.awsEndpoint,
           intervalMs: cam.cloudFps ? 1000 / cam.cloudFps : 500, // ~2 fps default
           onResult: (r) => {
+            if (cancelled) return;
             const any = !!(r?.isFire || (r?.detections?.length > 0));
             setIsFire(any);
             setStatus(any ? "🔥 Fire detected" : "✅ No fire detected");
           },
-          onError: (e) => setStatus(`Cloud error: ${e?.message || e}`)
+          onError: (e) => {
+            if (!cancelled) setStatus(`Cloud error: ${e?.message || e}`);
+          }
         });
       }
     }
@@ -112,11 +125,12 @@ export default function CameraTile({ cam }) {
     attachStream().then(startDetection);
 
     return () => {
+      cancelled = true;
       if (hls) { try { hls.destroy(); } catch{} }
       if (pcRef.current) { try { pcRef.current.close(); } catch{} }
       if (detectorRef.current) { try { detectorRef.current.destroy(); } catch{} }
       if (abortRef.current) stopCloudDetect(abortRef.current);
-      setIsStreaming(false);
+      // Don't call setIsStreaming(false) in cleanup - it causes additional renders
     };
   }, [cam]);
 
