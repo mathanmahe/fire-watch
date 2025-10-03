@@ -1,63 +1,75 @@
 ```fireWatch/
-    frontend/
-    ├── index.html
-    ├── package.json
-    ├── vite.config.js
-    └── src/
-        ├── App.jsx
-        ├── main.jsx
-        ├── styles.css
-        ├── auth/
-        │   └── AuthContext.jsx
-        ├── components/
-        │   ├── AddCameraDialog.jsx
-        │   ├── CameraGrid.jsx
-        │   ├── CameraTile.jsx
-        │   ├── FireStatusButton.jsx
-        │   ├── MiniStatusPanel.jsx
-        │   ├── SideNav.jsx
-        │   ├── SingleCameraView.jsx
-        │   ├── StatusPanel.jsx
-        │   └── StreamingIcon.jsx
-        ├── pages/
-        │   ├── Dashboard.jsx
-        │   ├── Login.jsx
-        │   └── Status.jsx
-        ├── store/
-        │   └── cameras.jsx
-        └── utils/
-            ├── cloudDetect.js
-            ├── playWebRTC.js
-            ├── theme.js
-            ├── videoDetector.js
-            └── worker-client.js
-    backend/
-    ├── .env
-    ├── package.json
-    ├── prisma/
-    │   ├── firewatch.db
-    │   ├── migrations/
-    │   │   ├── 20251001193330_init/
-    │   │   │   └── migration.sql
-    │   │   ├── 20251001203431_init/
-    │   │   │   └── migration.sql
-    │   │   └── migration_lock.toml
-    │   └── schema.prisma
-    ├── test-api.js
-    ├── test-auto-refresh.js
-    ├── test-login.js
-    └── src/
-        ├── server.js
-        ├── config.js
-        ├── auth/
-        │   └── cognitoVerify.js
-        ├── db/
-        │   └── prisma.js
-        ├── routes/
-        │   └── cameras.js
-        └── services/
-            ├── mediamtx.js
-            └── cloudDetector.js   
+    ├── frontend/
+    │   ├── index.html
+    │   ├── package.json
+    │   ├── vite.config.js
+    │   ├── models/
+    │   │   └── yolov11n_bestFire.onnx
+    │   ├── node_modules/
+    │   ├── package-lock.json
+    │   └── src/
+    │       ├── App.jsx
+    │       ├── main.jsx
+    │       ├── styles.css
+    │       ├── auth/
+    │       │   └── AuthContext.jsx
+    │       ├── components/
+    │       │   ├── AddCameraDialog.jsx
+    │       │   ├── CameraGrid.jsx
+    │       │   ├── CameraTile.jsx
+    │       │   ├── FireStatusButton.jsx
+    │       │   ├── MiniStatusPanel.jsx
+    │       │   ├── SideNav.jsx
+    │       │   ├── SingleCameraView.jsx
+    │       │   ├── StatusPanel.jsx
+    │       │   └── StreamingIcon.jsx
+    │       ├── pages/
+    │       │   ├── Dashboard.jsx
+    │       │   ├── Login.jsx
+    │       │   └── Status.jsx
+    │       ├── store/
+    │       │   └── cameras.jsx
+    │       └── utils/
+    │           ├── cloudDetect.js
+    │           ├── playWebRTC.js
+    │           ├── theme.js
+    │           ├── videoDetector.js
+    │           └── worker-client.js
+    ├── backend/
+    │   ├── .env
+    │   ├── mediamtx.yml
+    │   ├── package.json
+    │   ├── package-lock.json
+    │   ├── Readme.md
+    │   ├── prisma/
+    │   │   ├── firewatch.db
+    │   │   ├── migrations/
+    │   │   │   ├── 20251001193330_init/
+    │   │   │   │   └── migration.sql
+    │   │   │   ├── 20251001203431_init/
+    │   │   │   │   └── migration.sql
+    │   │   │   └── migration_lock.toml
+    │   │   └── schema.prisma
+    │   ├── test-api.js
+    │   ├── test-auto-refresh.js
+    │   ├── test-login.js
+    │    └── src/
+    │        ├── server.js
+    │        ├── config.js
+    │        ├── auth/
+    │        │   └── cognitoVerify.js
+    │        ├── db/
+    │        │   └── prisma.js
+    │       ├── routes/
+    │       │   └── cameras.js
+    │       └── services/
+    │           ├── mediamtx.js
+    │           └── cloudDetector.js   
+    ├── fire_sample2.mp4
+    ├── todo.md
+    ├── ReadME.md
+    └── DOCKER_SETUP.md
+    └── docker-compose.yml
 ```
 
 
@@ -91,7 +103,16 @@ here’s a clean “what-does-what” you can paste into your README.
 
 * **index.html** — Vite entry HTML. Mounts the React app at `#root` and loads `/src/main.jsx`.
 * **package.json** — Frontend dependencies and scripts (`dev`, `build`, `preview`).
+* **package-lock.json** — Locked dependency versions for reproducible frontend installs.
 * **vite.config.js** — Vite config; includes React plugin and COOP/COEP headers for in-browser ONNX.
+
+### models/
+
+* **yolov11n_bestFire.onnx** — Pre-trained ONNX model for local fire detection:
+  * Lightweight YOLOv11 nano model optimized for fire detection
+  * Used by `videoDetector.js` for in-browser fire detection
+  * Runs inference on video frames captured from camera streams
+  * Model delivers real-time fire detection without cloud dependencies
 
 
 ### src/
@@ -153,8 +174,20 @@ here’s a clean “what-does-what” you can paste into your README.
 
 ### Root
 
-* **.env** — Runtime config (SQLite path, Cognito IDs, MediaMTX paths, AWS fire endpoint, ffmpeg path, API port).
+* **.env** — Runtime config (SQLite path, Cognito IDs, MediaMTX paths, AWS fire endpoint, ffmpeg path, API port)
+* **mediamtx.yml** — MediaMTX configuration file for stream management:
+  * Configures HLS server on port 8888 with low-latencies variant
+  * Sets up WebRTC server (WHEP/WHIP) on port 8889 
+  * Defines RTSP server on port 8554 for accepting RTSP publishers
+  * Pre-configured camera sources pulling from RTSP streams (cam1-cam5)
+  * Includes WebRTC ICE settings and additional hosts configuration
 * **package.json** — Backend dependencies, Prisma generation, and scripts (`dev`, `migrate`).
+* **package-lock.json** — Locked dependency versions for reproducible installs.
+* **Readme.md** — Backend-specific documentation covering:
+  * Recent changes and implementations (auth middleware, multi-user isolation)
+  * Database schema modifications (userId field, unique constraints)
+  * AWS services integration (Cognito, Lambda, SNS)
+  * Test utilities and CLI authentication tools
 * **test-api.js** — API testing script with automatic token refresh for authenticated endpoints.
 * **test-auto-refresh.js** — Token management utilities for API testing with Cognito authentication.
 * **test-login.js** — CLI tool for user authentication with Cognito, handles NEW_PASSWORD_REQUIRED challenge.
@@ -254,4 +287,25 @@ here’s a clean “what-does-what” you can paste into your README.
 * **Constraints**: `@@unique([userId, camera])` allows users to have cameras with same names.
 * **Indexing**: `@@index([userId])` for query optimization.
 * **Migrations**: Database schema managed through Prisma migrations.
+
+
+
+## Docker Implementation for MediaMtx - PROPOSED, SUBJECT TO CHANGE
+# Network topology
+1. User device - browser to frontend, served locally on the device
+2. Browser loads streams from MediaMTX at http://ONPREM_IP:8889/... (WHEP) and/or http://ONPREM_IP:8888/... (HLS).
+3. Browser calls Backend API at http://ONPREM_IP:4000/api/....
+4. Backend (host) talks to MediaMTX via localhost: http://127.0.0.1:8888 (HLS) / :8889 (WHEP).
+5. Optional cloud path: Backend uses ffmpeg to grab frames from http://127.0.0.1:8888/<cam>/index.m3u8 and POST to your AWS Lambda.
+
+
+
+# On prem host prerequisites
+Docker, Node.js, ffmpeg, open firewall ports - 
+- `4000/tcp`: backend API
+- `8888/tcp`: MediaMTX HLS/HTTP
+- `8889/tcp`: MediaMTX WHEP/WHIP
+- `8554/tcp`: MediaMTX RTSP (if you ingest via RTSP)
+- `8000–8100/udp`: MediaMTX WebRTC ICE (adjust range if you prefer)
+
 
