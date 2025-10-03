@@ -1,4 +1,6 @@
 import express from "express";
+import http from "node:http";
+import cors from "cors";
 import pino from "pino";
 import { cfg } from "./config.js";
 import { prisma } from "./db/prisma.js";
@@ -10,11 +12,28 @@ import { startCloudDetector } from "./services/cloudDetector.js";
 const log = pino({ name: "server" });
 const app = express();
 
+// CORS configuration for browser access
+app.use(cors({
+  origin: true,
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json({ limit: "5mb" }));
 
+// MediaMTX HTTP health probe utility
+async function probeMtxHttp() {
+  return new Promise((resolve) => {
+    const req = http.request({ host: "127.0.0.1", port: 8888, method: "HEAD", path: "/" }, res => {
+      res.resume(); resolve(true);
+    });
+    req.on("error", () => resolve(false));
+    req.end();
+  });
+}
+
 app.get("/healthz", async (_req, res) => {
-  const mediamtxRunning = await isMediaMTXRunning();
-  res.json({ ok: true, mediamtx: mediamtxRunning });
+  res.json({ ok: true, mediamtx: await probeMtxHttp() });
 });
 
 app.use("/api", requireAuth);

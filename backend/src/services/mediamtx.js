@@ -1,6 +1,7 @@
 import Docker from "dockerode";
 import fs from "node:fs";
 import http from "node:http";
+import path from "node:path";
 import pino from "pino";
 import { cfg } from "../config.js";
 
@@ -9,14 +10,15 @@ const docker = new Docker(); // defaults to /var/run/docker.sock
 
 let container = null;
 const CONTAINER_NAME = "mediamtx-firewatch";
-const IMAGE_NAME = "bluenviron/mediamtx:latest";
+const IMAGE_NAME = process.env.MEDIAMTX_IMAGE || "bluenviron/mediamtx:v1.14.0";
 
 // Allow override via env, else default to 8000-8100
 const ICE_MIN = Number(process.env.MEDIAMTX_ICE_MIN || 8000);
 const ICE_MAX = Number(process.env.MEDIAMTX_ICE_MAX || 8100);
 
 export async function startMediaMTX() {
-  const configPath = cfg.mediamtx?.config || "./mediamtx.yml";
+  const rawPath = cfg.mediamtx?.config || "./mediamtx.yml";
+  const configPath = path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
   const haveConfig = fs.existsSync(configPath);
 
   // If running already, return
@@ -36,8 +38,14 @@ export async function startMediaMTX() {
   log.info("MediaMTX container started");
 
   // Wait until HTTP port answers
-  await waitForHttp("127.0.0.1", 8888, 10000);
+  const timeout = Number(process.env.MEDIAMTX_READY_TIMEOUT_MS || 20000);
+  await waitForHttp("127.0.0.1", 8888, timeout);
   log.info("MediaMTX HTTP is responsive on :8888");
+  
+  // Stream container logs if enabled
+  if (process.env.MEDIAMTX_STREAM_LOGS === "true") {
+    await streamMediaMtxLogs();
+  }
   return container;
 }
 
@@ -73,7 +81,15 @@ async function isContainerRunning(c) {
 }
 
 async function pullImageIfNeeded() {
-  // Pull latest every time to keep image fresh; or check presence first
+  // Check locally first
+  try { 
+    await docker.getImage(IMAGE_NAME).inspect(); 
+    log.info(`MediaMTX image ${IMAGE_NAME} already present locally`);
+    return; 
+  } catch {}
+  
+  // Pull if not present
+  log.info(`Pulling MediaMTX image ${IMAGE_NAME}...`);
   return new Promise((resolve, reject) => {
     docker.pull(IMAGE_NAME, (err, stream) => {
       if (err) return reject(err);
@@ -108,7 +124,7 @@ function makePortMaps() {
 
 async function createContainer({ configPath, haveConfig, isLinux }) {
   const binds = [];
-  if (haveConfig) binds.push(`${configPath}:/mediamtx.yml:ro`);
+  if (haveConfig) binds.push(`${configPath}:/mediamtx.yml:ro,z`);
   // Optional recordings directory
   if (process.env.MEDIAMTX_RECORDINGS_DIR) {
     binds.push(`${process.env.MEDIAMTX_RECORDINGS_DIR}:/recordings`);
@@ -147,6 +163,16 @@ async function createContainer({ configPath, haveConfig, isLinux }) {
 async function stopAndRemoveContainer(c) {
   try { await c.stop({ t: 5 }); } catch (e) { log.warn(`stop: ${e.message}`); }
   try { await c.remove({ force: true }); } catch (e) { log.warn(`remove: ${e.message}`); }
+}
+
+export async function streamMediaMtxLogs() {
+  if (!container) return;
+  try {
+    const logStream = await container.logs({ follow: true, stdout: true, stderr: true, tail: 50 });
+    logStream.on('data', chunk => log.info({ mtx: chunk.toString().trim() }));
+  } catch (error) {
+    log.error({ error: error.message }, "Failed to stream MediaMTX logs");
+  }
 }
 
 async function waitForHttp(host, port, timeoutMs = 10000) {

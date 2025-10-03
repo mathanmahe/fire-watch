@@ -15,8 +15,8 @@ webrtcICEUDPMin: 8000
 webrtcICEUDPMax: 8100
 # Advertise correct IPs to clients (LAN):
 webrtcIPsFromInterfaces: yes
-# OR add explicit IP/host to be safe:
-webrtcAdditionalHosts: [ "YOUR_ONPREM_IP" ]
+# Explicit IPs for WebRTC (replace with actual deployment IPs)
+webrtcAdditionalHosts: [ "localhost", "127.0.0.1" ]
 
 # (Optional) RTSP server if you also need to accept RTSP publishers
 rtsp: yes
