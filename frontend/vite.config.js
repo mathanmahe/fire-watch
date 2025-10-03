@@ -7,5 +7,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     headers: { "Cross-Origin-Opener-Policy": "same-origin", "Cross-Origin-Embedder-Policy": "require-corp" }
-  }
+  },
+  publicDir: 'models'
 });

@@ -24,7 +24,7 @@ if (ort.env.wasm.simd) {
 let sessionPromise;
 function getSession() {
   if (!sessionPromise) {
-    sessionPromise = ort.InferenceSession.create("http://127.0.0.1:8089/yolov11n_bestFire.onnx", sessionOptions);
+    sessionPromise = ort.InferenceSession.create("/models/yolov11n_bestFire.onnx", sessionOptions);
   }
   return sessionPromise;
 }
