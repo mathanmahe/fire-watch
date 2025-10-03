@@ -13,23 +13,39 @@
         │   ├── AddCameraDialog.jsx
         │   ├── CameraGrid.jsx
         │   ├── CameraTile.jsx
+        │   ├── FireStatusButton.jsx
+        │   ├── MiniStatusPanel.jsx
         │   ├── SideNav.jsx
-        │   └── StatusPanel.jsx
+        │   ├── SingleCameraView.jsx
+        │   ├── StatusPanel.jsx
+        │   └── StreamingIcon.jsx
         ├── pages/
         │   ├── Dashboard.jsx
-        │   └── Login.jsx
+        │   ├── Login.jsx
+        │   └── Status.jsx
         ├── store/
         │   └── cameras.jsx
         └── utils/
             ├── cloudDetect.js
             ├── playWebRTC.js
+            ├── theme.js
             ├── videoDetector.js
             └── worker-client.js
     backend/
     ├── .env
     ├── package.json
     ├── prisma/
+    │   ├── firewatch.db
+    │   ├── migrations/
+    │   │   ├── 20251001193330_init/
+    │   │   │   └── migration.sql
+    │   │   ├── 20251001203431_init/
+    │   │   │   └── migration.sql
+    │   │   └── migration_lock.toml
     │   └── schema.prisma
+    ├── test-api.js
+    ├── test-auto-refresh.js
+    ├── test-login.js
     └── src/
         ├── server.js
         ├── config.js
@@ -91,11 +107,12 @@ here’s a clean “what-does-what” you can paste into your README.
 #### pages/
 
 * **Login.jsx** — Minimal sign-in form (email/password). Calls `AuthContext.login`. Replace with Amplify UI or a custom Cognito flow.
-* **Dashboard.jsx** — Main three-panel page (left nav + camera grid + status panel). Hosts the “Add Camera” modal and ties together grid and status.
+* **Dashboard.jsx** — Main three-panel page (left nav + camera grid + status panel). Hosts the "Add Camera" modal and ties together grid and status. Features view mode switching (grid/single) and status panel toggle.
+* **Status.jsx** — Dedicated status page showing comprehensive camera status table with streaming, fire detection, and viewing status.
 
 #### components/
 
-* **SideNav.jsx** — Left navigation (Video/Chats/Schedule/Settings). Exposes “+ Add Camera” and “Sign out” buttons.
+* **SideNav.jsx** — Left navigation (Video/Status). Exposes "+ Add Camera" and "Sign out" buttons.
 * **CameraGrid.jsx** — 3×3 (scrollable) responsive grid that renders a list of `<CameraTile />` from the camera store.
 * **CameraTile.jsx** — The live player + detection status card per camera.
 
@@ -103,15 +120,21 @@ here’s a clean “what-does-what” you can paste into your README.
   * If `detection === "local"`, lazy-loads `videoDetector.js` and runs in-browser ONNX, updating tile status.
   * If `detection === "cloud"`, samples frames (from the video element) and calls the AWS endpoint (via `cloudDetect.js`).
   * Displays **Live/Down**, **FIRE/CLEAR**, and camera metadata.
+* **SingleCameraView.jsx** — Single camera view mode with navigation controls to cycle through cameras.
+* **FireStatusButton.jsx** — Reusable fire status indicator component.
+* **StreamingIcon.jsx** — Reusable streaming status indicator with visual states.
+* **MiniStatusPanel.jsx** — Compact status panel showing camera visibility toggles and status icons.
 * **StatusPanel.jsx** — Right-side table showing per-camera runtime flags (isStreaming/isFire/isView), name, and location. (Lightweight now; can be wired to live back-end events later.)
 * **AddCameraDialog.jsx** — Modal form to add a camera (name, location, IP, creds, detection type, stream type & URL/gateway). Pushes to the camera store.
 
 #### store/
 
-* **cameras.js** — Simple React context for camera metadata and list management.
+* **cameras.jsx** — Simple React context for camera metadata and list management.
 
   * Seeds 10 demo cameras (5 local, 5 cloud).
   * `addCamera()` merges new cameras; used by `AddCameraDialog`.
+  * Manages camera status (isFire, isStreaming) and visibility state.
+  * Provides `toggleCameraVisibility()` for show/hide functionality.
   * Can be extended to sync with backend CRUD.
 
 #### utils/
@@ -122,6 +145,7 @@ here’s a clean “what-does-what” you can paste into your README.
   * Creates `RTCPeerConnection`, sends offer to `http://<gateway>/<name>/whep`, sets remote answer, and returns a `MediaStream`.
 * **videoDetector.js** — Your in-browser ONNX detector module (imports ORT worker, runs local detections on a video element/stream).
 * **worker-client.js** — Web worker that loads the ONNX model and does inference off the main thread.
+* **theme.js** — Theme management utilities for light/dark mode switching with localStorage persistence.
 
 ---
 
@@ -131,13 +155,21 @@ here’s a clean “what-does-what” you can paste into your README.
 
 * **.env** — Runtime config (SQLite path, Cognito IDs, MediaMTX paths, AWS fire endpoint, ffmpeg path, API port).
 * **package.json** — Backend dependencies, Prisma generation, and scripts (`dev`, `migrate`).
+* **test-api.js** — API testing script with automatic token refresh for authenticated endpoints.
+* **test-auto-refresh.js** — Token management utilities for API testing with Cognito authentication.
+* **test-login.js** — CLI tool for user authentication with Cognito, handles NEW_PASSWORD_REQUIRED challenge.
 
 ### prisma/
 
 * **schema.prisma** — Prisma schema for **SQLite**:
 
-  * `Camera` table (your six required fields: `id`, `camera`, `location`, `ip`, `username`, `password`) plus practical fields (`detection`, `streamType`, `streamName`, `webrtcBase`, `hlsUrl`, timestamps).
+  * `Camera` table with multi-user support via `userId` field (links to Cognito user sub).
+  * Multi-tenancy constraint: `@@unique([userId, camera])` - users can have cameras with same names.
+  * Added index: `@@index([userId])` for query optimization.
+  * Fields: `id`, `camera`, `location`, `ip`, `username`, `password`, `detection`, `streamType`, `streamName`, `webrtcBase`, `hlsUrl`, `userId`, timestamps.
   * `Detection` table (optional future use) for timestamped results per camera.
+* **firewatch.db** — SQLite database file.
+* **migrations/** — Database migration files for schema changes.
 
 ### src/
 
@@ -145,14 +177,18 @@ here’s a clean “what-does-what” you can paste into your README.
 
   * JSON middleware.
   * `/healthz` for liveness and MediaMTX status.
-  * (Optional) `requireAuth` gate for `/api/*` once Cognito is wired.
+  * `requireAuth` middleware protecting all `/api/*` routes with Cognito JWT verification.
   * Mounts `/api/cameras` routes.
   * Connects Prisma and **starts MediaMTX** on boot.
+  * Auto-starts cloud detectors for existing cameras with `detection: "CLOUD"`.
 * **config.js** — Loads `.env` and exports typed config (DB URL, Cognito, MediaMTX, ffmpeg, AWS endpoint, port).
 
 #### auth/
 
-* **cognitoVerify.js** — Middleware to verify **Cognito ID/access tokens** using `@aws-jwt-verify`. Attaches `req.user` on success.
+* **cognitoVerify.js** — Middleware to verify **Cognito ID/access tokens** using `@aws-jwt-verify`. 
+  * Extracts user info from Cognito ID token.
+  * Attaches `req.user` (with sub and email) to authenticated requests.
+  * Returns 401 for missing or invalid tokens.
 
 #### db/
 
@@ -160,14 +196,17 @@ here’s a clean “what-does-what” you can paste into your README.
 
 #### routes/
 
-* **cameras.js** — REST API for camera metadata + simple status:
+* **cameras.js** — REST API for camera metadata with multi-user isolation:
 
-  * `POST /api/cameras` — Create a camera (starts a cloud detector if `detection === CLOUD`).
-  * `GET /api/cameras` — List cameras.
-  * `PUT /api/cameras/:id` — Update camera (restarts cloud detector if needed).
-  * `DELETE /api/cameras/:id` — Delete camera (stops detector).
+  * **Multi-user isolation**: All routes filter by `req.user.sub` (Cognito user ID).
+  * `POST /api/cameras` — Create a camera (links to authenticated user via userId field, starts cloud detector if `detection === CLOUD`).
+  * `GET /api/cameras` — List cameras (users only see their own cameras).
+  * `PUT /api/cameras/:id` — Update camera (ownership verification before allowing modifications, restarts cloud detector if needed).
+  * `DELETE /api/cameras/:id` — Delete camera (ownership verification, stops detector).
   * `POST /api/cameras/:id/detections` — (Optional) Persist a detection into the `Detection` table.
   * `GET /api/cameras/status/all` — Lightweight status snapshot for the UI.
+  * Auto-starts/stops cloud detector when camera is activated/deactivated.
+  * Error handling for ownership violations.
 
 #### services/
 
@@ -178,16 +217,41 @@ here’s a clean “what-does-what” you can paste into your README.
   * Provides the WHEP/HLS endpoints consumed by the frontend.
 * **cloudDetector.js** — Background workers for **cloud detection**:
 
-  * For each `CLOUD` camera, builds an input URL (HLS via MediaMTX or provided HLS).
-  * Uses **ffmpeg** to grab periodic JPEG frames (e.g., 2 fps).
-  * POSTs **raw JPEG bytes** to your AWS fire-detection endpoint with a `camera-id` header.
-  * (Hook point) Persist results to `Detection` or publish alerts.
+  * Converts frame extraction from Python to Node.js.
+  * RTSP support: Builds RTSP URLs with credentials (`rtsp://user:pass@ip:port/path`).
+  * Uses **ffmpeg** to grab frames every 5 seconds (configurable fps).
+  * Sends JPEG frames to AWS Lambda endpoint.
+  * Lambda response triggers SNS (handled by Lambda, not backend).
+  * Maintains worker map to track active detectors per camera.
+  * Graceful start/stop for detectors.
 
 ---
 
 ## FLOW
 
-* **Frontend local detection flow**: `CameraTile` → `playWebRTC()` (MediaMTX WHEP) → attach `<video>` → `videoDetector.js`  runs ONNX in browser → updates tile/status.
-* **Frontend cloud detection flow**: `CameraTile` → play stream (WebRTC/HLS) → `cloudDetect.js` captures frames → hits **AWS endpoint** → updates tile/status.
-* **Backend control plane**: CRUD cameras in SQLite via Prisma; starts MediaMTX; for `CLOUD` cameras, `cloudDetector.js` samples frames server-side and posts to AWS (optional if you keep client-side sampling).
+### Authentication Flow
+* **Backend**: All `/api/*` routes protected by `requireAuth` middleware using Cognito JWT verification.
+* **Frontend**: `AuthContext` manages authentication state, routes between `<Login />` and `<Dashboard />`.
+* **Testing**: `test-login.js` provides CLI authentication, `test-auto-refresh.js` manages token refresh for API testing.
+
+### Frontend Detection Flows
+* **Local Detection**: `CameraTile` → `playWebRTC()` (MediaMTX WHEP) → attach `<video>` → `videoDetector.js` runs ONNX in browser → updates tile/status.
+* **Cloud Detection**: `CameraTile` → play stream (WebRTC/HLS) → `cloudDetect.js` captures frames → hits **AWS endpoint** → updates tile/status.
+
+### Backend Control Plane
+* **Multi-user**: CRUD cameras in SQLite via Prisma with user isolation via `userId` field.
+* **MediaMTX**: Starts MediaMTX on server boot for stream management.
+* **Cloud Detection**: For `CLOUD` cameras, `cloudDetector.js` samples frames server-side and posts to AWS Lambda.
+* **Auto-start**: Existing cloud detectors automatically start when server boots.
+
+### View Modes
+* **Grid View**: Traditional 3×3 camera grid with scrollable layout.
+* **Single View**: Focused single camera view with navigation controls to cycle through cameras.
+* **Status Panel**: Toggle-able compact status panel showing camera visibility and status indicators.
+
+### Database Schema
+* **Multi-tenancy**: `Camera` table includes `userId` field linking to Cognito user sub.
+* **Constraints**: `@@unique([userId, camera])` allows users to have cameras with same names.
+* **Indexing**: `@@index([userId])` for query optimization.
+* **Migrations**: Database schema managed through Prisma migrations.
 
