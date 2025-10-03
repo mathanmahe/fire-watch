@@ -1,0 +1,52 @@
+import React from "react";
+import { useCameras } from "../store/cameras.jsx";
+import StreamingIcon from "./StreamingIcon.jsx";
+import FireStatusButton from "./FireStatusButton.jsx";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+
+export default function MiniStatusPanel() {
+  const { cameras, toggleCameraVisibility } = useCameras();
+
+  if (!cameras || cameras.length === 0) {
+    return (
+      <div className="mini-status-panel">
+        <div className="mini-status-header">
+          <h3>Camera Status</h3>
+        </div>
+        <div className="mini-status-empty">
+          <p>No cameras available</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mini-status-panel">
+      <div className="mini-status-header">
+        <h3>Camera Status</h3>
+      </div>
+      <div className="mini-status-list">
+        {cameras.map((cam) => (
+          <div key={cam.id} className="mini-status-item">
+            <button 
+              className={`visibility-toggle ${cam.isVisible ? 'visible' : 'hidden'}`}
+              onClick={() => toggleCameraVisibility(cam.id)}
+              title={cam.isVisible ? 'Hide camera' : 'Show camera'}
+            >
+              {cam.isVisible ? <FaEye size={14} /> : <FaEyeSlash size={14} />}
+            </button>
+            <span className="camera-name">{cam.name}</span>
+            <div className="status-icons">
+              {cam.isFire ? (
+                <span className="fire-icon fire">🔥</span>
+              ) : (
+                <FireStatusButton isFire={false} />
+              )}
+              <StreamingIcon isStreaming={cam.isStreaming} size={14} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

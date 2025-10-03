@@ -2,14 +2,18 @@
 // POST offer SDP to: `${base}/${name}/whep` and set remote answer.
 // This mirrors the flow from your multi-stream-grid.html.
 export async function negotiate(base, name, sdp) {
-    const url = `${base}/${encodeURIComponent(name)}/whep`;
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/sdp", "Accept": "application/sdp" },
-      body: sdp
-    });
-    if (!r.ok) throw new Error(`${r.status} ${await r.text().catch(()=>r.statusText)}`);
-    return r.text();
+    // TEMPORARILY DISABLED - Comment out network request to avoid connection errors
+    console.log(`[DISABLED] Would negotiate with ${base}/${name}/whep`);
+    throw new Error("WebRTC negotiation temporarily disabled");
+    
+    // const url = `${base}/${encodeURIComponent(name)}/whep`;
+    // const r = await fetch(url, {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/sdp", "Accept": "application/sdp" },
+    //   body: sdp
+    // });
+    // if (!r.ok) throw new Error(`${r.status} ${await r.text().catch(()=>r.statusText)}`);
+    // return r.text();
   }
   
   export async function playWebRTC(base, name) {
