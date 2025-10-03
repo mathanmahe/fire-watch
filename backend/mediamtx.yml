@@ -1,0 +1,36 @@
+# mediamtx.yml (Docker / v1.14.x) — RTSP pull, HLS+WebRTC out
+logLevel: info
+
+# HLS server
+hls: yes
+hlsAddress: :8888
+hlsAllowOrigin: '*'
+hlsVariant: lowLatency        # optional but nice for low latency
+
+# WebRTC server (WHEP/WHIP)
+webrtc: yes
+webrtcAddress: :8889
+webrtcAllowOrigin: '*'
+webrtcICEUDPMin: 8000
+webrtcICEUDPMax: 8100
+# Advertise correct IPs to clients (LAN):
+webrtcIPsFromInterfaces: yes
+# OR add explicit IP/host to be safe:
+webrtcAdditionalHosts: [ "YOUR_ONPREM_IP" ]
+
+# (Optional) RTSP server if you also need to accept RTSP publishers
+rtsp: yes
+rtspAddress: :8554
+
+paths:
+  cam1:
+    # Escape '@' as %40 as you already did
+    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
+  cam2:
+    source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
+  cam3:
+    source: rtsp://admin:CCTVCheck%40123@10.0.0.201:8554/live
+  cam4:
+    source: rtsp://admin:CCTVCheck%40123@10.0.0.202:8554/live
+  cam5:
+    source: rtsp://admin:CCTVCheck%40123@10.0.0.203:8554/live
