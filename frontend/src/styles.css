@@ -414,62 +414,52 @@ body {
   background: transparent;
 }
 
-/* video area */
+/* VIDEO — centered, no internal letterbox bleed, pure black around it */
 .video-wrap {
   position: relative;
   flex: 1;
-  background: #000;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-video {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center center;
-}
 
-/* Ensure video detector doesn't interfere with main video display */
-.video-wrap {
+  /* the only thing visible outside the video should be black */
   background: #000 !important;
   background-image: none !important;
-}
-.video-wrap > video:first-child {
-  /* Main video should always be visible */
-  position: relative !important;
-  z-index: 1 !important;
-  background: transparent !important;
-}
-.video-wrap .detector {
-  /* Hide any duplicate detector video elements */
-  position: absolute !important;
-  inset: 0 !important;
-  background: transparent !important;
-  pointer-events: none !important;
-}
-.video-wrap .detector video {
-  display: none !important; /* Hide detector's duplicate video */
-}
-.video-wrap .detector canvas {
-  pointer-events: none !important;
+
+  /* make sure nothing "shines through" from siblings/ancestors */
+  isolation: isolate;
 }
 
-/* Completely eliminate phantom video background content */
-.video-wrap * {
-  background-image: none !important;
-  background-color: transparent !important;
-}
-.video-wrap {
+/* the actual video — size to fit; don't stretch to 100%/100% */
+.video-wrap > video {
+  display: block;
+
+  /* key change: let the video keep its own aspect ratio and only grow
+     until it hits the container's bounds */
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+
+  /* keep it centered and contained */
+  object-fit: contain;
+  object-position: center;
+
+  /* ensure any "inside" area (if the UA paints one) is black, not a poster */
   background-color: #000 !important;
   background-image: none !important;
+
+  /* nudge compositing to prevent odd GPU tiling artifacts */
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
-.video-wrap::before,
-.video-wrap::after {
-  background: none !important;
-  display: none !important;
+
+/* if you have a detector/overlay, keep it transparent and non-interfering */
+.video-wrap .detector,
+.video-wrap .detector * {
+  background: transparent !important;
+  background-image: none !important;
+  pointer-events: none !important;
 }
 
 /* status overlay under tiles */
