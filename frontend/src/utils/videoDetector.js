@@ -254,13 +254,11 @@ export class VideoDetector {
 
   _spawnWorker() {
     try {
-      this._worker = new Worker(this.workerUrl, {
-        type: "classic",
-        name: this.id,
-      });
+      const url = new URL("./worker-client.js", import.meta.url);
+      this._worker = new Worker(url, { type: "module", name: this.id });
+
       this._worker.onmessage = (evt) => {
         const output = evt.data;
-        // postprocess on main thread to keep worker lean
         this._boxes = this._processOutput(
           output,
           this._overlay.width,
@@ -270,14 +268,14 @@ export class VideoDetector {
         this._busy = false;
       };
 
-      this._worker.onerror = (error) => {
-        console.error(`[${this.id}] Worker error:`, error);
+      this._worker.onerror = (e) => {
+        console.error(`[${this.id}] Worker error:`, e);
         this._worker = null;
       };
 
       console.log(`[${this.id}] Worker created successfully`);
-    } catch (error) {
-      console.error(`[${this.id}] Failed to create worker:`, error);
+    } catch (e) {
+      console.error(`[${this.id}] Worker spawn failed`, e);
       this._worker = null;
     }
   }
