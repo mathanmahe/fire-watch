@@ -11,11 +11,6 @@ hlsVariant: lowLatency # optional but nice for low latency
 webrtc: yes
 webrtcAddress: :8889
 webrtcAllowOrigin: "*"
-# webrtcICEUDPMin: 8000
-# webrtcICEUDPMax: 8100
-
-# iceUDPMin: 8000
-# iceUDPMax: 8100
 
 webrtcLocalUDPAddress: :8189
 
