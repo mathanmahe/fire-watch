@@ -18,7 +18,9 @@ const ICE_MAX = Number(process.env.MEDIAMTX_ICE_MAX || 8100);
 
 export async function startMediaMTX() {
   const rawPath = cfg.mediamtx?.config || "./mediamtx.yml";
-  const configPath = path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
+  const configPath = path.isAbsolute(rawPath)
+    ? rawPath
+    : path.resolve(process.cwd(), rawPath);
   const haveConfig = fs.existsSync(configPath);
 
   // If running already, return
@@ -41,7 +43,7 @@ export async function startMediaMTX() {
   const timeout = Number(process.env.MEDIAMTX_READY_TIMEOUT_MS || 20000);
   await waitForHttp("127.0.0.1", 8888, timeout);
   log.info("MediaMTX HTTP is responsive on :8888");
-  
+
   // Stream container logs if enabled
   if (process.env.MEDIAMTX_STREAM_LOGS === "true") {
     await streamMediaMtxLogs();
@@ -82,12 +84,12 @@ async function isContainerRunning(c) {
 
 async function pullImageIfNeeded() {
   // Check locally first
-  try { 
-    await docker.getImage(IMAGE_NAME).inspect(); 
+  try {
+    await docker.getImage(IMAGE_NAME).inspect();
     log.info(`MediaMTX image ${IMAGE_NAME} already present locally`);
-    return; 
+    return;
   } catch {}
-  
+
   // Pull if not present
   log.info(`Pulling MediaMTX image ${IMAGE_NAME}...`);
   return new Promise((resolve, reject) => {
@@ -106,19 +108,18 @@ async function pullImageIfNeeded() {
 }
 
 function makePortMaps() {
-  // TCP ports
-  const exposed = { "8554/tcp": {}, "8888/tcp": {}, "8889/tcp": {} };
+  const exposed = {
+    "8888/tcp": {},
+    "8889/tcp": {},
+    "8554/tcp": {},
+    "8189/udp": {},
+  };
   const bindings = {
-    "8554/tcp": [{ HostPort: "8554" }],
     "8888/tcp": [{ HostPort: "8888" }],
     "8889/tcp": [{ HostPort: "8889" }],
+    "8554/tcp": [{ HostPort: "8554" }], // optional if you don't need RTSP ingress
+    "8189/udp": [{ HostPort: "8189" }],
   };
-
-  // UDP range
-  for (let p = ICE_MIN; p <= ICE_MAX; p++) {
-    exposed[`${p}/udp`] = {};
-    bindings[`${p}/udp`] = [{ HostPort: String(p) }];
-  }
   return { exposed, bindings };
 }
 
@@ -161,15 +162,28 @@ async function createContainer({ configPath, haveConfig, isLinux }) {
 }
 
 async function stopAndRemoveContainer(c) {
-  try { await c.stop({ t: 5 }); } catch (e) { log.warn(`stop: ${e.message}`); }
-  try { await c.remove({ force: true }); } catch (e) { log.warn(`remove: ${e.message}`); }
+  try {
+    await c.stop({ t: 5 });
+  } catch (e) {
+    log.warn(`stop: ${e.message}`);
+  }
+  try {
+    await c.remove({ force: true });
+  } catch (e) {
+    log.warn(`remove: ${e.message}`);
+  }
 }
 
 export async function streamMediaMtxLogs() {
   if (!container) return;
   try {
-    const logStream = await container.logs({ follow: true, stdout: true, stderr: true, tail: 50 });
-    logStream.on('data', chunk => log.info({ mtx: chunk.toString().trim() }));
+    const logStream = await container.logs({
+      follow: true,
+      stdout: true,
+      stderr: true,
+      tail: 50,
+    });
+    logStream.on("data", (chunk) => log.info({ mtx: chunk.toString().trim() }));
   } catch (error) {
     log.error({ error: error.message }, "Failed to stream MediaMTX logs");
   }
@@ -179,12 +193,16 @@ async function waitForHttp(host, port, timeoutMs = 10000) {
   const deadline = Date.now() + timeoutMs;
   return new Promise((resolve, reject) => {
     const tick = () => {
-      const req = http.request({ host, port, method: "GET", path: "/" }, (res) => {
-        res.resume();
-        resolve();
-      });
+      const req = http.request(
+        { host, port, method: "GET", path: "/" },
+        (res) => {
+          res.resume();
+          resolve();
+        }
+      );
       req.on("error", () => {
-        if (Date.now() > deadline) return reject(new Error("MTX HTTP not ready"));
+        if (Date.now() > deadline)
+          return reject(new Error("MTX HTTP not ready"));
         setTimeout(tick, 300);
       });
       req.end();

@@ -10,7 +10,9 @@ import FireStatusButton from "./FireStatusButton.jsx";
 let VideoDetectorClassPromise;
 function loadVideoDetector() {
   if (!VideoDetectorClassPromise) {
-    VideoDetectorClassPromise = import("../utils/videoDetector.js").then(m => m.VideoDetector || m.default);
+    VideoDetectorClassPromise = import("../utils/videoDetector.js").then(
+      (m) => m.VideoDetector || m.default
+    );
   }
   return VideoDetectorClassPromise;
 }
@@ -45,27 +47,30 @@ export default function CameraTile({ cam }) {
       setStatus("Connecting…");
       try {
         if (cam.stream.type === "webrtc") {
-          const { pc, stream } = await playWebRTC(cam.stream.gatewayBase, cam.stream.name);
+          const { pc, stream } = await playWebRTC(
+            cam.stream.gatewayBase,
+            cam.stream.name
+          );
           if (cancelled) return;
           pcRef.current = pc;
           v.srcObject = stream;
-          await v.play().catch(()=>{});
+          await v.play().catch(() => {});
         } else if (cam.stream.type === "hls") {
           if (Hls.isSupported()) {
             hls = new Hls({ liveDurationInfinity: true });
             hls.loadSource(cam.stream.url);
             hls.attachMedia(v);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(()=>{}));
+            hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(() => {}));
           } else if (v.canPlayType("application/vnd.apple.mpegurl")) {
             v.src = cam.stream.url;
-            await v.play().catch(()=>{});
+            await v.play().catch(() => {});
           } else {
             v.src = cam.stream.fallback || "";
-            await v.play().catch(()=>{});
+            await v.play().catch(() => {});
           }
         } else if (cam.stream.type === "mp4") {
           v.src = cam.stream.url;
-          await v.play().catch(()=>{});
+          await v.play().catch(() => {});
         }
         if (!cancelled) {
           setIsStreaming(true);
@@ -85,17 +90,20 @@ export default function CameraTile({ cam }) {
         const VideoDetector = await loadVideoDetector();
         if (cancelled) return;
         const d = new VideoDetector({
-          source: cam.stream.type === "hls" || cam.stream.type === "mp4" ? cam.stream.url : undefined,
+          source:
+            cam.stream.type === "hls" || cam.stream.type === "mp4"
+              ? cam.stream.url
+              : undefined,
           id: cam.name,
-          mount: v.parentElement,           // mount UI in tile
-          workerUrl: "../utils/worker-client.js",   // your worker
+          mount: v.parentElement, // mount UI in tile
+          workerUrl: "../utils/worker-client.js", // your worker
           throttleMs: 80,
           onDetections: (boxes) => {
             if (cancelled) return;
             const any = boxes && boxes.length > 0;
             setIsFire(any);
             // Don't update status for fire detection - keep it separate
-          }
+          },
         });
         detectorRef.current = d;
         if (cam.stream.type === "webrtc") {
@@ -113,13 +121,13 @@ export default function CameraTile({ cam }) {
           intervalMs: cam.cloudFps ? 1000 / cam.cloudFps : 500, // ~2 fps default
           onResult: (r) => {
             if (cancelled) return;
-            const any = !!(r?.isFire || (r?.detections?.length > 0));
+            const any = !!(r?.isFire || r?.detections?.length > 0);
             setIsFire(any);
             // Don't update status for fire detection - keep it separate
           },
           onError: (e) => {
             if (!cancelled) setStatus(`Cloud error: ${e?.message || e}`);
-          }
+          },
         });
       }
     }
@@ -128,9 +136,21 @@ export default function CameraTile({ cam }) {
 
     return () => {
       cancelled = true;
-      if (hls) { try { hls.destroy(); } catch{} }
-      if (pcRef.current) { try { pcRef.current.close(); } catch{} }
-      if (detectorRef.current) { try { detectorRef.current.destroy(); } catch{} }
+      if (hls) {
+        try {
+          hls.destroy();
+        } catch {}
+      }
+      if (pcRef.current) {
+        try {
+          pcRef.current.close();
+        } catch {}
+      }
+      if (detectorRef.current) {
+        try {
+          detectorRef.current.destroy();
+        } catch {}
+      }
       if (abortRef.current) stopCloudDetect(abortRef.current);
       // Don't call setIsStreaming(false) in cleanup - it causes additional renders
     };
@@ -148,7 +168,7 @@ export default function CameraTile({ cam }) {
           <StreamingIcon isStreaming={isStreaming} size={14} />
         </div>
       </div>
-      <div className="video-wrap" onMouseEnter={()=>setViewed(true)}>
+      <div className="video-wrap" onMouseEnter={() => setViewed(true)}>
         <video ref={videoRef} muted playsInline />
         {status !== "Streaming…" && status !== "Idle" && (
           <div className="status-overlay">

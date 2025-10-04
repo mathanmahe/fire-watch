@@ -10,7 +10,7 @@ const seed = [
     detection: "local",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam1",
     },
   },
@@ -21,7 +21,7 @@ const seed = [
     detection: "local",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam2",
     },
   },
@@ -32,7 +32,7 @@ const seed = [
     detection: "local",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam3",
     },
   },
@@ -43,7 +43,7 @@ const seed = [
     detection: "local",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam4",
     },
   },
@@ -54,7 +54,7 @@ const seed = [
     detection: "local",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam5",
     },
   },
@@ -67,7 +67,7 @@ const seed = [
     detection: "cloud",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam6",
     },
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
@@ -80,7 +80,7 @@ const seed = [
     detection: "cloud",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam7",
     },
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
@@ -93,7 +93,7 @@ const seed = [
     detection: "cloud",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam8",
     },
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
@@ -106,7 +106,7 @@ const seed = [
     detection: "cloud",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam9",
     },
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
@@ -119,7 +119,7 @@ const seed = [
     detection: "cloud",
     stream: {
       type: "webrtc",
-      gatewayBase: "http://127.0.0.1:8889",
+      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam10",
     },
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
@@ -132,7 +132,37 @@ const CamerasCtx = createContext(null);
 export function CamerasProvider({ children }) {
   const [cameras, setCameras] = useState(seed);
   const [cameraStatuses, setCameraStatuses] = useState({});
-  const [cameraVisibility, setCameraVisibility] = useState({});
+  const [cameraVisibility, setCameraVisibility] = useState(() => {
+    // For local detection testing, only have cam1 visible by default
+    return {
+      "cam-1": true, // cam1 is visible
+      "cam-2": false, // hide cam2
+      "cam-3": false, // hide cam3
+      "cam-4": false, // hide cam4
+      "cam-5": false, // hide cam5
+      "cam-6": false, // hide cam6
+      "cam-7": false, // hide cam7
+      "cam-8": false, // hide cam8
+      "cam-9": false, // hide cam9
+      "cam-10": false, // hide cam10
+    };
+
+    /* 
+    // UNCOMMENT BELOW AND COMMENT OUT ABOVE TO SHOW ALL CAMERAS BY DEFAULT
+    return {
+      "cam-1": true,   // cam1 visible
+      "cam-2": true,   // cam2 visible
+      "cam-3": true,   // cam3 visible
+      "cam-4": true,   // cam4 visible
+      "cam-5": true,   // cam5 visible
+      "cam-6": true,   // cam6 visible
+      "cam-7": true,   // cam7 visible
+      "cam-8": true,   // cam8 visible
+      "cam-9": true,   // cam9 visible
+      "cam-10": true,  // cam9 visible
+    };
+    */
+  });
 
   const addCamera = useMemo(
     () => (cam) => {

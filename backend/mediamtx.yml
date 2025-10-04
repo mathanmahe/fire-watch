@@ -1,5 +1,5 @@
 # mediamtx.yml (Docker / v1.14.x) — RTSP pull, HLS+WebRTC out
-logLevel: info
+logLevel: debug
 
 # HLS server
 hls: yes
@@ -17,7 +17,11 @@ webrtcLocalUDPAddress: :8189
 # Advertise correct IPs to clients (LAN):
 webrtcIPsFromInterfaces: yes
 # Explicit IPs for WebRTC (replace with actual deployment IPs)
-webrtcAdditionalHosts: ["localhost", "127.0.0.1"]
+# webrtcAdditionalHosts: ["localhost", "127.0.0.1"]
+# webrtcIPsFromInterfacesList: [lo0]
+
+# using Mathan's IP for local testing
+webrtcAdditionalHosts: ["host.docker.internal", "10.0.0.160"]
 
 # (Optional) RTSP server if you also need to accept RTSP publishers
 rtsp: yes
@@ -29,9 +33,9 @@ paths:
     source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
   cam2:
     source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
-  cam3:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.201:8554/live
-  cam4:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.202:8554/live
-  cam5:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.203:8554/live
+  # cam3:
+  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.201:8554/live
+  # cam4:
+  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.202:8554/live
+  # cam5:
+  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.203:8554/live
