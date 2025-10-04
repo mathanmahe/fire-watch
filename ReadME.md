@@ -93,8 +93,6 @@ npm run dev
 ```
 
 
-here’s a clean “what-does-what” you can paste into your README.
-
 # FireWatch: File Detailed Directory Description
 
 ## frontend/
@@ -307,5 +305,14 @@ Docker, Node.js, ffmpeg, open firewall ports -
 - `8889/tcp`: MediaMTX WHEP/WHIP
 - `8554/tcp`: MediaMTX RTSP (if you ingest via RTSP)
 - `8000–8100/udp`: MediaMTX WebRTC ICE (adjust range if you prefer)
+
+
+# # docker debug commands
+# show logs
+```docker logs mediamtx-firewatch  ``` 
+# verify running
+```docker ps | grep mediamtx-firewatch```
+# delete container
+```docker rm -f mediamtx-firewatch    ```
 
 

@@ -4,19 +4,25 @@ logLevel: info
 # HLS server
 hls: yes
 hlsAddress: :8888
-hlsAllowOrigin: '*'
-hlsVariant: lowLatency        # optional but nice for low latency
+hlsAllowOrigin: "*"
+hlsVariant: lowLatency # optional but nice for low latency
 
 # WebRTC server (WHEP/WHIP)
 webrtc: yes
 webrtcAddress: :8889
-webrtcAllowOrigin: '*'
-webrtcICEUDPMin: 8000
-webrtcICEUDPMax: 8100
+webrtcAllowOrigin: "*"
+# webrtcICEUDPMin: 8000
+# webrtcICEUDPMax: 8100
+
+# iceUDPMin: 8000
+# iceUDPMax: 8100
+
+webrtcLocalUDPAddress: :8189
+
 # Advertise correct IPs to clients (LAN):
 webrtcIPsFromInterfaces: yes
 # Explicit IPs for WebRTC (replace with actual deployment IPs)
-webrtcAdditionalHosts: [ "localhost", "127.0.0.1" ]
+webrtcAdditionalHosts: ["localhost", "127.0.0.1"]
 
 # (Optional) RTSP server if you also need to accept RTSP publishers
 rtsp: yes

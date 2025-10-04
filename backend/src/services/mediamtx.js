@@ -135,7 +135,7 @@ async function createContainer({ configPath, haveConfig, isLinux }) {
     return docker.createContainer({
       name: CONTAINER_NAME,
       Image: IMAGE_NAME,
-      Cmd: haveConfig ? ["-config", "/mediamtx.yml"] : [],
+      Cmd: haveConfig ? ["/mediamtx.yml"] : [],
       HostConfig: {
         NetworkMode: "host",
         RestartPolicy: { Name: "unless-stopped" },
@@ -151,7 +151,7 @@ async function createContainer({ configPath, haveConfig, isLinux }) {
     name: CONTAINER_NAME,
     Image: IMAGE_NAME,
     ExposedPorts: exposed,
-    Cmd: haveConfig ? ["-config", "/mediamtx.yml"] : [],
+    Cmd: haveConfig ? ["/mediamtx.yml"] : [],
     HostConfig: {
       RestartPolicy: { Name: "unless-stopped" },
       Binds: binds,
