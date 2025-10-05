@@ -427,18 +427,30 @@ body {
   background-image: none !important;
 
   /* make sure nothing "shines through" from siblings/ancestors */
+  /* ensure the overlay stacks above the video */
   isolation: isolate;
+  position: relative;
+}
+
+.video-wrap canvas {
+  z-index: 2;
+}
+.video-wrap video {
+  z-index: 1;
+}
+
+.video-wrap .detector {
+  width: 100%;
+  height: 100%;
 }
 
 /* the actual video — size to fit; don't stretch to 100%/100% */
 .video-wrap > video {
   display: block;
 
-  /* key change: let the video keep its own aspect ratio and only grow
-     until it hits the container's bounds */
-  width: auto !important;
+  /* Fill the width of the tile, maintain aspect ratio */
+  width: 100% !important;
   height: auto !important;
-  max-width: 100% !important;
   max-height: 100% !important;
 
   /* keep it centered and contained */
@@ -462,25 +474,41 @@ body {
   pointer-events: none !important;
 }
 
-/* status overlay under tiles */
+/* status overlay - centered, transparent with high z-index */
 .status-overlay {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
-  background: var(--overlay);
-  padding: 6px 10px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  padding: 12px 16px;
   border-radius: 8px;
-  backdrop-filter: blur(4px);
-  border: 1px solid var(--border);
+  z-index: 10;
+  text-align: center;
+  pointer-events: none;
 }
-.status-message {
-  color: var(--on-surface);
-  font-size: 12px;
-  font-weight: 500;
+.status-icon {
+  color: #84f045;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8));
+  transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
-.status-message.fire {
-  color: var(--error);
+.status-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+.status-icon.error {
+  color: #f3d078;
+}
+.status-overlay {
+  transition: opacity 0.3s ease;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ==========================================================================
@@ -948,6 +976,19 @@ body {
     grid-auto-rows: 240px;
   }
 }
+
+@media (min-width: 1300px) {
+  .grid {
+    grid-auto-rows: 320px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .grid {
+    grid-auto-rows: 400px;
+  }
+}
+
 @media (max-width: 1200px) {
   .shell {
     grid-template-columns: 200px 1fr;

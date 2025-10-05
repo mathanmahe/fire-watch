@@ -13,29 +13,31 @@ webrtcAddress: :8889
 webrtcAllowOrigin: "*"
 
 webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: :8189
 
 # Advertise correct IPs to clients (LAN):
-webrtcIPsFromInterfaces: yes
+webrtcIPsFromInterfaces: no
 # Explicit IPs for WebRTC (replace with actual deployment IPs)
-# webrtcAdditionalHosts: ["localhost", "127.0.0.1"]
-# webrtcIPsFromInterfacesList: [lo0]
-
-# using Mathan's IP for local testing
-webrtcAdditionalHosts: ["host.docker.internal", "10.0.0.160"]
+# Only advertise the IP that browsers can actually reach
+webrtcAdditionalHosts: ["10.0.0.160"]
 
 # (Optional) RTSP server if you also need to accept RTSP publishers
 rtsp: yes
 rtspAddress: :8554
 
 paths:
+  # Testing setup - don't auto-pull, just accept incoming streams
+  # You can publish to these paths via OBS, ffmpeg, or your cameras
   cam1:
-    # Escape '@' as %40 as you already did
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
+    # No source = on-demand publishing (cameras can push to this path)
+    # To test with ffmpeg from your local machine:
+    # ffmpeg -re -i /path/to/video.mp4 -c copy -f rtsp rtsp://10.0.0.160:8554/cam1
+
   cam2:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
-  # cam3:
-  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.201:8554/live
-  # cam4:
-  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.202:8554/live
-  # cam5:
-  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.203:8554/live
+    # No source
+
+  # Keep your real RTSP pull cameras commented out until accessible
+  # cam1:
+  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
+  # cam2:
+  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live

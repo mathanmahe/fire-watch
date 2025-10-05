@@ -495,16 +495,25 @@ export class VideoDetector {
   _drawBoxes(boxes) {
     const ctx = this._ctx;
     ctx.save();
-    ctx.lineWidth = 3;
-    ctx.font = "18px system-ui";
+
+    // Scale font size based on canvas dimensions for better visibility
+    // Use more aggressive scaling: divide by 30 instead of 60 to double the font size
+    const fontSize = Math.max(24, Math.floor(this._overlay.width / 30));
+    const lineWidth = Math.max(4, Math.floor(this._overlay.width / 320));
+    const labelPadding = Math.floor(fontSize * 0.3);
+    const labelHeight = Math.floor(fontSize * 1.3);
+
+    ctx.lineWidth = lineWidth;
+    ctx.font = `bold ${fontSize}px system-ui`;
+
     boxes.forEach(([x1, y1, x2, y2, label]) => {
       ctx.strokeStyle = "#00FF00";
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
       ctx.fillStyle = "#00FF00";
       const w = ctx.measureText(label).width;
-      ctx.fillRect(x1, Math.max(0, y1 - 22), w + 10, 20);
+      ctx.fillRect(x1, Math.max(0, y1 - labelHeight), w + labelPadding * 2, labelHeight);
       ctx.fillStyle = "#000";
-      ctx.fillText(label, x1 + 4, Math.max(16, y1 - 6));
+      ctx.fillText(label, x1 + labelPadding, Math.max(fontSize, y1 - labelPadding));
     });
     ctx.restore();
   }

@@ -113,12 +113,14 @@ function makePortMaps() {
     "8889/tcp": {},
     "8554/tcp": {},
     "8189/udp": {},
+    "8189/tcp": {}, // WebRTC TCP fallback
   };
   const bindings = {
     "8888/tcp": [{ HostPort: "8888" }],
     "8889/tcp": [{ HostPort: "8889" }],
     "8554/tcp": [{ HostPort: "8554" }], // optional if you don't need RTSP ingress
     "8189/udp": [{ HostPort: "8189" }],
+    "8189/tcp": [{ HostPort: "8189" }], // WebRTC TCP fallback
   };
   return { exposed, bindings };
 }

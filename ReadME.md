@@ -325,3 +325,22 @@ Docker, Node.js, ffmpeg, open firewall ports -
 # delete container
 
 `docker rm -f mediamtx-firewatch    `
+
+## WebRTC Streaming & Fire Detection - Key Changes
+
+# 1. Fixed WebRTC ICE Connection Issues (mediamtx.yml, mediamtx.js):
+
+    - Enabled TCP fallback for WebRTC (webrtcLocalTCPAddress: :8189)
+    - Fixed ICE candidate advertising (removed host.docker.internal, kept only 10.0.0.160) - Added TCP port 8189 to Docker container configuration
+
+# 2. Fixed Bounding Box Display (CameraTile.jsx, videoDetector.js:
+
+    - Canvas now overlays video transparently (removed video drawing from canvas)
+    - Manual worker spawn and video loop binding instead of using attachWebRTC()
+    - Added ResizeObserver to sync canvas size when switching views (grid ↔ single) - Doubled font size for bounding box labels (width / 30) for better visibility in grid view
+
+# 3. Responsive Grid Improvements (styles.css):
+
+    - Added breakpoints at 1300px (320px rows) and 1600px (400px rows) to prevent video cropping on wider screens
+    - Ensure videoPlayer grows with the tile surround it.
+    -
