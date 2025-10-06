@@ -82,8 +82,6 @@ function Dashboard() {
               </nav>
 
               <div className="toolbar-controls">
-                <button onClick={() => setShowAdd(true)}>+ Add Camera</button>
-
                 <button
                   className="theme-toggle"
                   onClick={onToggleTheme}
@@ -197,6 +195,28 @@ function Dashboard() {
                     </svg>
                     <span>Status Panel</span>
                   </button>
+                  <div className="add-camera-container">
+                    <button
+                      className={`view-btn ${showAdd ? "active" : ""}`}
+                      onClick={() => setShowAdd(!showAdd)}
+                      title="Add Camera"
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M4 4h3l2-2h6l2 2h3c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm8 3c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z" />
+                      </svg>
+                      <span>Add Camera</span>
+                    </button>
+                    {showAdd && (
+                      <div className="add-camera-form">
+                        <AddCameraDialog onClose={() => setShowAdd(false)} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -205,10 +225,10 @@ function Dashboard() {
               <section
                 className={`content ${
                   viewMode === "single"
-                    ? (showStatusPanel || isExiting)
+                    ? showStatusPanel || isExiting
                       ? "content--single-with-status"
                       : "content--single"
-                    : (showStatusPanel || isExiting)
+                    : showStatusPanel || isExiting
                     ? "content--with-status"
                     : "content--grid"
                 }`}
@@ -243,8 +263,6 @@ function Dashboard() {
           <Status onNavigate={handleNavigate} />
         )}
       </main>
-
-      {showAdd && <AddCameraDialog onClose={() => setShowAdd(false)} />}
     </div>
   );
 }
