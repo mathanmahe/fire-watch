@@ -53,7 +53,7 @@
 }
 
 /* Light theme palette — FireWatch (orange/blue) */
-[data-theme="light"] {
+[data-theme="light-old"] {
   /* Core */
   --bg: #feeeee; /* warm app background */
   --surface: #ffffff; /* base cards */
@@ -87,6 +87,75 @@
 
   /* Focus ring */
   --focus: 0 0 0 2px rgba(242, 102, 39, 0.28);
+}
+
+[data-theme="light"] {
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --surface-1: #fbfcfe;
+  --surface-2: #eef1f7;
+  --border: #e3e7ef;
+  --overlay: rgba(255, 255, 255, 0.9);
+  --primary: #2c3e50;
+  --primary-variant: #243444;
+  --secondary: #f26627; /* accent */
+  --error: #c62828;
+
+  --on-bg: #121417;
+  --on-surface: #141922;
+  --on-primary: #ffffff;
+  --on-secondary: #ffffff;
+  --on-error: #ffffff;
+  --ink: #0f172a;
+  --muted: #667085;
+  --muted-2: #8893a5;
+
+  --ok: #198754;
+  --warn: #b45309;
+  --danger: #b91c1c;
+  --focus: 0 0 0 2px rgba(44, 62, 80, 0.28);
+}
+
+/* Light theme — Neon Cobalt + Aqua (no orange in UI) */
+[data-theme="light-neon"] {
+  /* Core surfaces */
+  --bg: #f8faff; /* crisp cool base */
+  --surface: #ffffff; /* cards */
+  --surface-1: #f4f7ff; /* slight elevation */
+  --surface-2: #ecf2ff; /* toolbars / sidebar */
+  --border: #dce4f2; /* cool subtle border */
+  --overlay: rgba(255, 255, 255, 0.9);
+
+  /* Accents (vibrant) */
+  --primary: #2f6bff; /* neon cobalt */
+  --primary-variant: #1e3aff; /* deep indigo for contrast */
+  --secondary: #00d4c6; /* bright aqua/teal */
+  --error: #e11d48; /* vivid rose for alerts */
+
+  /* Content */
+  --on-bg: #0b1020;
+  --on-surface: #0f1422;
+  --on-primary: #ffffff; /* text on cobalt */
+  --on-secondary: #002b2a; /* text on aqua */
+  --on-error: #ffffff;
+
+  /* Neutral text scales */
+  --ink: #0f172a; /* main text */
+  --muted: #66738a; /* secondary text */
+  --muted-2: #8894a8; /* tertiary text */
+
+  /* Status colors (subtle but clear) */
+  --ok: #16a34a;
+  --warn: #b45309;
+  --danger: #b91c1c;
+
+  /* Focus ring */
+  --focus: 0 0 0 2px rgba(47, 107, 255, 0.35);
+}
+
+/* Light scrollbar */
+[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: #ccd6e5;
 }
 
 /* Optional light-scrollbar */
@@ -444,16 +513,15 @@ body {
   height: 100%;
 }
 
-/* the actual video — size to fit; don't stretch to 100%/100% */
+/* the actual video — fill entire tile, content maintains aspect ratio */
 .video-wrap > video {
   display: block;
 
-  /* Fill the width of the tile, maintain aspect ratio */
+  /* Fill the entire tile area */
   width: 100% !important;
-  height: auto !important;
-  max-height: 100% !important;
+  height: 100% !important;
 
-  /* keep it centered and contained */
+  /* keep video content centered and contained within the element */
   object-fit: contain;
   object-position: center;
 
@@ -986,6 +1054,12 @@ body {
 @media (min-width: 1600px) {
   .grid {
     grid-auto-rows: 400px;
+  }
+}
+
+@media (min-width: 2500px) {
+  .grid {
+    grid-auto-rows: 520px;
   }
 }
 

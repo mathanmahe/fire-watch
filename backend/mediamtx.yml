@@ -26,18 +26,22 @@ rtsp: yes
 rtspAddress: :8554
 
 paths:
-  # Testing setup - don't auto-pull, just accept incoming streams
-  # You can publish to these paths via OBS, ffmpeg, or your cameras
+  # Real RTSP cameras
   cam1:
-    # No source = on-demand publishing (cameras can push to this path)
-    # To test with ffmpeg from your local machine:
-    # ffmpeg -re -i /path/to/video.mp4 -c copy -f rtsp rtsp://10.0.0.160:8554/cam1
+    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
 
   cam2:
-    # No source
+    source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
 
-  # Keep your real RTSP pull cameras commented out until accessible
-  # cam1:
-  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
-  # cam2:
-  #   source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
+  # Sample video streams (pushed via ffmpeg script)
+  cam3:
+    # No source = on-demand publishing from ffmpeg
+
+  cam4:
+    # No source = on-demand publishing from ffmpeg
+
+  cam5:
+    # No source = on-demand publishing from ffmpeg
+
+  cam6:
+    # No source = on-demand publishing from ffmpeg

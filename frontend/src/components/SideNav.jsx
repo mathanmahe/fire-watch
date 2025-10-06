@@ -12,22 +12,26 @@ export default function SideNav({ onNavigate, onLogout, currentPage }) {
     <aside className="sidenav">
       <div className="brand">Fire Watch</div>
       <nav>
-        <a 
-          className={currentPage === 'video' ? 'active' : ''} 
-          onClick={() => onNavigate('video')}
+        <a
+          className={currentPage === "video" ? "active" : ""}
+          onClick={() => onNavigate("video")}
         >
-          Video
+          Streams
         </a>
-        <a 
-          className={currentPage === 'status' ? 'active' : ''} 
-          onClick={() => onNavigate('status')}
+        <a
+          className={currentPage === "status" ? "active" : ""}
+          onClick={() => onNavigate("status")}
         >
           Status
         </a>
       </nav>
-      
+
       <div className="sidenav-footer">
-        <button className="theme-toggle" onClick={onToggle} aria-label="Toggle theme">
+        <button
+          className="theme-toggle"
+          onClick={onToggle}
+          aria-label="Toggle theme"
+        >
           {theme === "dark" ? "🌙 Dark" : "☀️ Light"}
         </button>
         <button onClick={onLogout}>Sign out</button>

@@ -88,6 +88,14 @@ npm run migrate     # creates firewatch.db and tables
 npm run dev
 ```
 
+# Run sample videos
+
+```
+./stream-videos.sh
+```
+
+To stream some sample videos in the videos dir onto cameras 3-7
+
 # FireWatch: File Detailed Directory Description
 
 ## frontend/
@@ -343,4 +351,20 @@ Docker, Node.js, ffmpeg, open firewall ports -
 
     - Added breakpoints at 1300px (320px rows) and 1600px (400px rows) to prevent video cropping on wider screens
     - Ensure videoPlayer grows with the tile surround it.
-    -
+    - add Spinner and failed to load icons.
+
+# 4. Video Player Improvements:
+
+- Changed video element from height: auto to height: 100% to fill entire tile (controls and player UI now fill full tile even when video isn't playing)
+- Added responsive breakpoint at 2500px width (grid rows: 520px) to prevent video cropping on ultra-wide screens
+
+MediaMTX Configuration:
+
+- Switched cam1 and cam2 back to real RTSP camera sources
+- Added cam3-7 as on-demand publishing paths for ffmpeg video streams
+
+UI Polish:
+
+- Changed "Video" nav link to "Streams"
+- Changed "FireWatch" to "Fire Watch" (with space)
+- Added light theme variants for better theming support
