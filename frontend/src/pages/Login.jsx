@@ -14,7 +14,14 @@ export default function Login() {
   return (
     <div className="login">
       <div className="login-card">
-        <h1>Fire Watch</h1>
+        <div className="login-brand">
+          <img
+            src="/images/fire-icon.png"
+            alt="Fire Watch Logo"
+            className="login-logo"
+          />
+          <h1>FireWatch</h1>
+        </div>
         <p className="sub">Sign in to continue</p>
         <form onSubmit={onSubmit}>
           <input

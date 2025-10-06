@@ -10,13 +10,11 @@ import { useCameras } from "../store/cameras.jsx";
 // add below imports
 import { withCamerasProvider } from "../store/cameras.jsx";
 
-
-
 function Dashboard() {
   const { logout } = useAuth();
   const [showAdd, setShowAdd] = useState(false);
-  const [currentPage, setCurrentPage] = useState('video');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'single'
+  const [currentPage, setCurrentPage] = useState("video");
+  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'single'
   const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const { cameras, toggleCameraVisibility } = useCameras();
@@ -27,7 +25,7 @@ function Dashboard() {
 
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
-    if (mode === 'single' && cameras.length > 0) {
+    if (mode === "single" && cameras.length > 0) {
       setSelectedCameraIndex(0);
       // Ensure the selected camera is visible when entering single view mode
       const selectedCamera = cameras[selectedCameraIndex] || cameras[0];
@@ -43,58 +41,130 @@ function Dashboard() {
 
   return (
     <div className="shell">
-      <SideNav 
-        onNavigate={handleNavigate} 
-        onLogout={logout} 
+      <SideNav
+        onNavigate={handleNavigate}
+        onLogout={logout}
         currentPage={currentPage}
       />
       <main className="main">
-        {currentPage === 'video' ? (
+        {currentPage === "video" ? (
           <>
             <header className="toolbar">
               <h2>Streams </h2>
               <div className="grow" />
               <div className="view-controls">
-                <button 
-                  className={`view-btn ${viewMode === 'single' ? 'active' : ''}`}
-                  onClick={() => handleViewModeChange('single')}
+                <button
+                  className={`view-btn ${
+                    viewMode === "single" ? "active" : ""
+                  }`}
+                  onClick={() => handleViewModeChange("single")}
                   title="Single View"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <rect
+                      x="3"
+                      y="3"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                    />
                   </svg>
                 </button>
-                <button 
-                  className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                  onClick={() => handleViewModeChange('grid')}
+                <button
+                  className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
+                  onClick={() => handleViewModeChange("grid")}
                   title="Grid View"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" fill="none"/>
-                    <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" fill="none"/>
-                    <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" fill="none"/>
-                    <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <rect
+                      x="3"
+                      y="3"
+                      width="7"
+                      height="7"
+                      rx="1"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                    />
+                    <rect
+                      x="14"
+                      y="3"
+                      width="7"
+                      height="7"
+                      rx="1"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                    />
+                    <rect
+                      x="3"
+                      y="14"
+                      width="7"
+                      height="7"
+                      rx="1"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                    />
+                    <rect
+                      x="14"
+                      y="14"
+                      width="7"
+                      height="7"
+                      rx="1"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                    />
                   </svg>
                 </button>
-                <button 
-                  className={`view-btn ${showStatusPanel ? 'active' : ''}`}
+                <button
+                  className={`view-btn ${showStatusPanel ? "active" : ""}`}
                   onClick={() => setShowStatusPanel(!showStatusPanel)}
                   title="Toggle Status Panel"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h18v2H3v-2zm0 4h18v2H3v-2zm0 4h18v2H3v-2z"/>
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h18v2H3v-2zm0 4h18v2H3v-2zm0 4h18v2H3v-2z" />
                   </svg>
                 </button>
               </div>
-              <button onClick={()=>setShowAdd(true)}>+ Add Camera</button>
+              <button onClick={() => setShowAdd(true)}>+ Add Camera</button>
             </header>
 
-            <section className={`content ${viewMode === 'single' ? (showStatusPanel ? 'content--single-with-status' : 'content--single') : showStatusPanel ? 'content--with-status' : 'content--grid'}`}>
-              {viewMode === 'grid' ? (
+            <section
+              className={`content ${
+                viewMode === "single"
+                  ? showStatusPanel
+                    ? "content--single-with-status"
+                    : "content--single"
+                  : showStatusPanel
+                  ? "content--with-status"
+                  : "content--grid"
+              }`}
+            >
+              {viewMode === "grid" ? (
                 <CameraGrid />
               ) : (
-                <SingleCameraView 
-                  selectedCameraIndex={selectedCameraIndex} 
+                <SingleCameraView
+                  selectedCameraIndex={selectedCameraIndex}
                   onCameraChange={handleCameraChange}
                 />
               )}
@@ -106,10 +176,9 @@ function Dashboard() {
         )}
       </main>
 
-      {showAdd && <AddCameraDialog onClose={()=>setShowAdd(false)} />}
+      {showAdd && <AddCameraDialog onClose={() => setShowAdd(false)} />}
     </div>
   );
 }
 
 export default withCamerasProvider(Dashboard);
-

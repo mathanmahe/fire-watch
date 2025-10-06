@@ -28,12 +28,14 @@ export default function MiniStatusPanel() {
       <div className="mini-status-list">
         {cameras.map((cam) => (
           <div key={cam.id} className="mini-status-item">
-            <button 
-              className={`visibility-toggle ${cam.isVisible ? 'visible' : 'hidden'}`}
+            <button
+              className={`visibility-toggle ${
+                cam.isVisible ? "visible" : "hidden"
+              }`}
               onClick={() => toggleCameraVisibility(cam.id)}
-              title={cam.isVisible ? 'Hide camera' : 'Show camera'}
+              title={cam.isVisible ? "Hide camera" : "Show camera"}
             >
-              {cam.isVisible ? <FaEye size={14} /> : <FaEyeSlash size={14} />}
+              {cam.isVisible ? <FaEye size={28} /> : <FaEyeSlash size={28} />}
             </button>
             <span className="camera-name">{cam.name}</span>
             <div className="status-icons">
