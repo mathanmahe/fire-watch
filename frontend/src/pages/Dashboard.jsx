@@ -271,11 +271,11 @@ function Dashboard() {
                 </CSSTransition>
               </section>
             ) : (
-              <Status onNavigate={handleNavigate} />
+              <Status onNavigate={handleNavigate} currentPage={currentPage} />
             )}
           </>
         ) : (
-          <Status onNavigate={handleNavigate} />
+          <Status onNavigate={handleNavigate} currentPage={currentPage} />
         )}
       </main>
     </div>

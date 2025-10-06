@@ -48,7 +48,7 @@ const ViewingStatusIcon = ({ isVisible }) => {
   );
 };
 
-export default function Status({ onNavigate }) {
+export default function Status({ onNavigate, currentPage = "status" }) {
   const { cameras } = useCameras();
   const { logout } = useAuth();
   const [showAdd, setShowAdd] = useState(false);
@@ -79,13 +79,13 @@ export default function Status({ onNavigate }) {
 
           <nav className="toolbar-nav">
             <button
-              className={`nav-btn ${false ? "active" : ""}`}
+              className={`nav-btn ${currentPage === "video" ? "active" : ""}`}
               onClick={() => handleNavigate("video")}
             >
               Streams
             </button>
             <button
-              className={`nav-btn ${true ? "active" : ""}`}
+              className={`nav-btn ${currentPage === "status" ? "active" : ""}`}
               onClick={() => handleNavigate("status")}
             >
               Status
