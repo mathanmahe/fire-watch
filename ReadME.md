@@ -300,7 +300,7 @@ To stream some sample videos in the videos dir onto cameras 3-7
 - **Indexing**: `@@index([userId])` for query optimization.
 - **Migrations**: Database schema managed through Prisma migrations.
 
-## Docker Implementation for MediaMtx - PROPOSED, SUBJECT TO CHANGE
+## Docker Implementation for MediaMtx
 
 # Network topology
 
