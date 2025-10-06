@@ -19,6 +19,8 @@ function Dashboard() {
   const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [isSecondaryToolbarExiting, setIsSecondaryToolbarExiting] =
+    useState(false);
   const [theme, setTheme] = React.useState(
     document.documentElement.getAttribute("data-theme") || "dark"
   );
@@ -26,7 +28,16 @@ function Dashboard() {
   const statusPanelRef = React.useRef(null);
 
   const handleNavigate = (page) => {
-    setCurrentPage(page);
+    if (currentPage === "video" && page !== "video") {
+      // Trigger exit animation for secondary toolbar
+      setIsSecondaryToolbarExiting(true);
+      setTimeout(() => {
+        setCurrentPage(page);
+        setIsSecondaryToolbarExiting(false);
+      }, 300); // Match the animation duration
+    } else {
+      setCurrentPage(page);
+    }
   };
 
   const onToggleTheme = () => setTheme(toggleTheme());
@@ -96,7 +107,11 @@ function Dashboard() {
 
             {/* Secondary Toolbar - Only visible on Streams tab */}
             {currentPage === "video" && (
-              <div className="secondary-toolbar">
+              <div
+                className={`secondary-toolbar ${
+                  isSecondaryToolbarExiting ? "exiting" : ""
+                }`}
+              >
                 <div className="view-controls">
                   <button
                     className={`view-btn ${

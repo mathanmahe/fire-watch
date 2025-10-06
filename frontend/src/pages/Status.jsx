@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useCameras } from "../store/cameras.jsx";
 import StreamingIcon from "../components/StreamingIcon.jsx";
 import FireStatusButton from "../components/FireStatusButton.jsx";
+import AddCameraDialog from "../components/AddCameraDialog.jsx";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { toggleTheme } from "../utils/theme.js";
@@ -50,6 +51,7 @@ const ViewingStatusIcon = ({ isVisible }) => {
 export default function Status({ onNavigate }) {
   const { cameras } = useCameras();
   const { logout } = useAuth();
+  const [showAdd, setShowAdd] = useState(false);
   const [theme, setTheme] = useState(
     document.documentElement.getAttribute("data-theme") || "dark"
   );
@@ -107,6 +109,28 @@ export default function Status({ onNavigate }) {
           <div className="status-panel">
             <div className="status-panel-header">
               <h3>Camera Status</h3>
+              <div className="add-camera-container">
+                <button
+                  className={`view-btn ${showAdd ? "active" : ""}`}
+                  onClick={() => setShowAdd(!showAdd)}
+                  title="Add Camera"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M4 4h3l2-2h6l2 2h3c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm8 3c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z" />
+                  </svg>
+                  <span>Add Camera</span>
+                </button>
+                {showAdd && (
+                  <div className="add-camera-form">
+                    <AddCameraDialog onClose={() => setShowAdd(false)} />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="status-table-wrapper">

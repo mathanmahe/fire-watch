@@ -517,6 +517,22 @@ body {
   }
 }
 
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Secondary toolbar exit transition */
+.secondary-toolbar.exiting {
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 .secondary-toolbar .view-controls {
   display: flex;
   gap: 8px;
@@ -588,6 +604,7 @@ body {
   gap: 16px;
   overflow: auto;
   padding-right: 6px;
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tile {
@@ -599,6 +616,8 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow-1);
   position: relative;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tile-header {
@@ -845,6 +864,7 @@ body {
   height: 100%;
   max-width: 100%;
   overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .single-view .tile {
   width: 100%;
@@ -1160,10 +1180,62 @@ body {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .status-panel-header h3 {
   margin: 0;
   color: var(--on-surface);
+}
+
+/* Add Camera button styling in status panel header */
+.status-panel-header .view-btn {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #1e293b;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  font-weight: 500;
+  min-width: auto;
+  min-height: auto;
+  width: auto;
+  height: auto;
+}
+
+.status-panel-header .view-btn svg {
+  color: #1e293b;
+  flex-shrink: 0;
+}
+
+.status-panel-header .view-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.status-panel-header .view-btn:hover svg {
+  color: #0f172a;
+}
+
+.status-panel-header .view-btn.active {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-color: #a78bfa;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4),
+    0 0 0 1px rgba(167, 139, 250, 0.3);
+}
+
+.status-panel-header .view-btn.active svg {
+  color: #ffffff;
 }
 
 .status-table-wrapper {
