@@ -3,6 +3,7 @@ import { useCameras } from "../store/cameras.jsx";
 import StreamingIcon from "./StreamingIcon.jsx";
 import FireStatusButton from "./FireStatusButton.jsx";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { ImFire } from "react-icons/im";
 
 export default function MiniStatusPanel() {
   const { cameras, toggleCameraVisibility } = useCameras();
@@ -40,11 +41,17 @@ export default function MiniStatusPanel() {
             <span className="camera-name">{cam.name}</span>
             <div className="status-icons">
               {cam.isFire ? (
-                <span className="fire-icon fire">🔥</span>
+                <ImFire
+                  size={26}
+                  style={{
+                    color: "#ff0000",
+                    filter: "drop-shadow(0 0 0 1px #ff6600)",
+                  }}
+                />
               ) : (
                 <FireStatusButton isFire={false} />
               )}
-              <StreamingIcon isStreaming={cam.isStreaming} size={14} />
+              <StreamingIcon isStreaming={cam.isStreaming} size={22} />
             </div>
           </div>
         ))}
