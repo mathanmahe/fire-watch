@@ -203,8 +203,8 @@ body {
      ========================================================================== */
 
 .shell {
-  display: grid;
-  grid-template-columns: 240px 1fr;
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   background: var(--bg);
 }
@@ -212,10 +212,16 @@ body {
 .main {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  flex: 1;
+  overflow: hidden;
 }
 
 .main > .content {
+  flex: 1;
+  min-width: 0;
+}
+
+.main > section {
   flex: 1;
   min-width: 0;
 }
@@ -226,19 +232,23 @@ body {
   gap: 16px;
   padding: 16px;
   min-height: 0;
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .content--grid {
   grid-template-columns: 1fr;
 }
 .content--with-status {
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 1fr 250px;
+  padding-right: 0;
 }
 .content--single {
   grid-template-columns: 1fr !important;
 }
 .content--single-with-status {
-  grid-template-columns: 1fr 280px !important;
+  grid-template-columns: 1fr 250px !important;
+  padding-right: 0;
 }
 
 .page-max {
@@ -345,12 +355,121 @@ body {
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 20px;
   padding: 16px 20px;
-  background: color-mix(in oklab, var(--primary) 16%, var(--surface-2));
-  border-bottom: 1px solid
-    color-mix(in oklab, var(--primary) 28%, var(--border));
-  box-shadow: var(--shadow-1);
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
+  border-bottom: 1px solid #1e40af;
+  box-shadow: 0 4px 20px rgba(30, 58, 138, 0.3);
+}
+
+.toolbar-brand {
+  display: flex;
+  align-items: flex-end;
+  gap: 0px;
+}
+
+.toolbar-logo {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.toolbar-title {
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+  font-size: 42px;
+  letter-spacing: 0.3px;
+  color: #f26627;
+  text-shadow: 0 2px 8px rgba(242, 102, 39, 0.3);
+}
+
+.toolbar-nav {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.nav-btn.active {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #e2e8f0 100%);
+  color: #1e3a8a;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.4),
+    0 2px 8px rgba(30, 58, 138, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+  font-weight: 700;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.nav-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 4px;
+  background: linear-gradient(90deg, #f26627 0%, #ff6b35 50%, #f26627 100%);
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(242, 102, 39, 0.4),
+    0 0 12px rgba(242, 102, 39, 0.3);
+  animation: pulse-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 2px 8px rgba(242, 102, 39, 0.4),
+      0 0 12px rgba(242, 102, 39, 0.3);
+  }
+  100% {
+    box-shadow: 0 2px 12px rgba(242, 102, 39, 0.6),
+      0 0 20px rgba(242, 102, 39, 0.5);
+  }
+}
+
+.nav-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.nav-btn.active:focus {
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3),
+    0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
 }
 
 .toolbar h2 {
@@ -376,38 +495,86 @@ body {
   box-shadow: var(--shadow-1);
 }
 
-.toolbar .view-controls {
+/* Secondary Toolbar (contextual controls for Streams tab) */
+.secondary-toolbar {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.toolbar .view-btn {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  color: var(--muted-2);
-  padding: 18px;
-  border-radius: 50%;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.secondary-toolbar .view-controls {
+  display: flex;
+  gap: 8px;
+  background: transparent;
+  border-radius: var(--radius-lg);
+  padding: 0;
+  border: none;
+}
+
+.secondary-toolbar .view-btn {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #1e293b;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
-    transform 0.15s ease;
-  min-width: 79px;
-  min-height: 79px;
-  width: 79px;
-  height: 79px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  font-weight: 500;
+  min-width: auto;
+  min-height: auto;
+  width: auto;
+  height: auto;
 }
-.toolbar .view-btn:hover {
-  background: var(--surface-2);
-  color: var(--on-surface);
-  border-color: color-mix(in oklab, var(--secondary) 30%, var(--border));
-  transform: scale(1.05);
+
+.secondary-toolbar .view-btn svg {
+  color: #1e293b;
 }
-.toolbar .view-btn.active {
-  background: color-mix(in oklab, var(--secondary) 18%, var(--surface-1));
-  color: var(--on-surface);
-  border-color: color-mix(in oklab, var(--secondary) 40%, var(--border));
-  transform: scale(1.05);
+
+.secondary-toolbar .view-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.secondary-toolbar .view-btn:hover svg {
+  color: #0f172a;
+}
+
+.secondary-toolbar .view-btn.active {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-color: #a78bfa;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4),
+    0 0 0 1px rgba(167, 139, 250, 0.3);
+}
+
+.secondary-toolbar .view-btn.active svg {
+  color: #ffffff;
+}
+
+.secondary-toolbar .view-btn svg {
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -708,6 +875,32 @@ body {
   max-height: calc(100vh - 200px);
   box-shadow: var(--shadow-1);
   backdrop-filter: none; /* avoid bloom on bright blues */
+}
+
+/* CSSTransition classes for status panel */
+.status-panel-enter .mini-status-panel {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.status-panel-enter-active .mini-status-panel {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Keep the wrapper in grid position during exit */
+.status-panel-exit .mini-status-panel {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.status-panel-exit-active .mini-status-panel {
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* header gets a nice blue-gray tint instead of green */
@@ -1127,17 +1320,42 @@ body {
 }
 
 @media (max-width: 1200px) {
-  .shell {
-    grid-template-columns: 200px 1fr;
+  .toolbar {
+    gap: 16px;
+    padding: 12px 16px;
+  }
+  .toolbar-title {
+    font-size: 36px;
   }
 }
 
 @media (max-width: 768px) {
-  .shell {
-    grid-template-columns: 1fr;
+  .toolbar {
+    gap: 12px;
+    padding: 10px 12px;
   }
-  .sidenav {
-    display: none;
+  .toolbar-brand {
+    gap: 0px;
+  }
+  .toolbar-logo {
+    width: 48px;
+    height: 48px;
+  }
+  .toolbar-title {
+    font-size: 30px;
+  }
+  .toolbar-nav {
+    gap: 6px;
+    padding: 4px;
+  }
+  .nav-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .toolbar-controls {
+    gap: 8px;
   }
   .grid {
     grid-template-columns: repeat(2, 1fr);
