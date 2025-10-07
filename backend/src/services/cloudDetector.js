@@ -7,16 +7,15 @@ const log = pino({ name: "cloud-detector" });
 const workers = new Map();
 
 function inputUrlFromCamera(cam) {
-  // Direct HLS URL provided
   if (cam.streamType === "HLS" && cam.hlsUrl) {
     return cam.hlsUrl;
   }
   
-  // RTSP stream - build URL with credentials
   if (cam.streamType === "RTSP" && cam.ip) {
     const protocol = "rtsp://";
+    // URL encode credentials to handle special characters like @
     const auth = (cam.username && cam.password) 
-      ? `${cam.username}:${cam.password}@` 
+      ? `${encodeURIComponent(cam.username)}:${encodeURIComponent(cam.password)}@` 
       : "";
     const address = cam.ip;
     const path = cam.streamName || "/h264Preview_01_main";
@@ -26,7 +25,6 @@ function inputUrlFromCamera(cam) {
     return url;
   }
   
-  // Default: MediaMTX HLS endpoint
   const base = cam.webrtcBase?.replace(/:\d+$/, ":8888") || "http://127.0.0.1:8888";
   const name = cam.streamName || cam.camera;
   return `${base}/${encodeURIComponent(name)}/index.m3u8`;
@@ -38,12 +36,11 @@ function grabFrameOnce(srcUrl) {
     const args = ["-y"];
     
     if (isRtsp) {
-      // RTSP-compatible options for most ffmpeg versions
       args.push(
-        "-rtsp_transport", "tcp",  // Use TCP instead of UDP
-        "-timeout", "5000000",      // Connection timeout in microseconds (5 sec)
-        "-analyzeduration", "1000000", // Reduce analysis time
-        "-probesize", "1000000"     // Reduce probe size
+        "-rtsp_transport", "tcp",
+        "-timeout", "5000000",
+        "-analyzeduration", "1000000",
+        "-probesize", "1000000"
       );
     }
     
@@ -79,11 +76,15 @@ async function postToFireEndpoint(cameraName, jpeg) {
   return r.json().catch(()=> ({}));
 }
 
-export function startCloudDetector(cam, { fps = 0.2 } = {}) { // 0.2 fps = every 5 seconds
-  if (workers.has(cam.id)) return;
+export function startCloudDetector(cam, { fps = 0.2 } = {}) {
+  if (workers.has(cam.id)) {
+    log.warn({ cam: cam.camera }, "Detector already running");
+    return;
+  }
+  
   const ms = Math.max(1000, Math.floor(1000 / fps));
   const src = inputUrlFromCamera(cam);
-  log.info({ cam: cam.camera, userId: cam.userId, src: src.replace(/:([^:@]+)@/, ':****@') }, "start cloud detector");
+  log.info({ cam: cam.camera, userId: cam.userId, src: src.replace(/:([^:@]+)@/, ':****@') }, "Starting cloud detector");
 
   let alive = true;
   (async function loop() {
@@ -110,6 +111,13 @@ export function startCloudDetector(cam, { fps = 0.2 } = {}) { // 0.2 fps = every
 
 export function stopCloudDetector(camId) {
   const stop = workers.get(camId);
-  if (stop) stop();
-  workers.delete(camId);
+  if (stop) {
+    stop();
+    workers.delete(camId);
+    log.info({ camId }, "Stopped cloud detector");
+  }
+}
+
+export function getRunningDetectors() {
+  return workers;
 }
