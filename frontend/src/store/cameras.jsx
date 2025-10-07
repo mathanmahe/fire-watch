@@ -69,21 +69,19 @@ const seed = [
     },
   },
 
-  // cloud detection (AWS)
+  // local detection for testing (cameras 6-7)
   {
     id: "cam-6",
     name: "cam-6",
     location: "North",
     ip: "192.168.1.106",
     port: "8554",
-    detection: "cloud",
+    detection: "local",
     stream: {
       type: "webrtc",
       gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam6",
     },
-    awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
-    cloudFps: 2,
   },
   {
     id: "cam-7",
@@ -91,14 +89,12 @@ const seed = [
     location: "East",
     ip: "192.168.1.107",
     port: "8554",
-    detection: "cloud",
+    detection: "local",
     stream: {
       type: "webrtc",
       gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam7",
     },
-    awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
-    cloudFps: 2,
   },
   {
     id: "cam-8",
