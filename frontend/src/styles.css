@@ -1179,6 +1179,22 @@ body {
   border-color: #15803d;
 }
 
+/* Status page specific styling for FireStatusButton in light theme */
+[data-theme="light"] .status-table .fire-status-btn {
+  display: inline-block;
+  width: auto;
+  min-width: 60px;
+  height: auto;
+  min-height: 40px;
+  max-width: 120px;
+  max-height: 60px;
+  font-size: 16px;
+  padding: 10px 16px;
+  margin: 0 auto;
+  text-align: center;
+  vertical-align: middle;
+}
+
 .visibility-toggle {
   background: var(--surface-1);
   border: 1px solid var(--border);
@@ -1363,6 +1379,22 @@ body {
 .status-table th:nth-child(5),
 .status-table td:nth-child(5) {
   text-align: center;
+}
+
+/* Status page specific styling for FireStatusButton - prevent stretching */
+.status-table .fire-status-btn {
+  display: inline-block;
+  width: auto;
+  min-width: 60px;
+  height: auto;
+  min-height: 40px;
+  max-width: 120px;
+  max-height: 60px;
+  font-size: 16px;
+  padding: 10px 16px;
+  margin: 0 auto;
+  text-align: center;
+  vertical-align: middle;
 }
 
 /* ==========================================================================

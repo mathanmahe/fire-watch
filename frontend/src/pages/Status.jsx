@@ -4,6 +4,7 @@ import StreamingIcon from "../components/StreamingIcon.jsx";
 import FireStatusButton from "../components/FireStatusButton.jsx";
 import AddCameraDialog from "../components/AddCameraDialog.jsx";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { ImFire } from "react-icons/im";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { toggleTheme } from "../utils/theme.js";
 
@@ -36,15 +37,12 @@ const StatusBadge = ({ label, active, isFire = false }) => {
 
 const ViewingStatusIcon = ({ isVisible }) => {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
+    <button
+      className={`visibility-toggle ${isVisible ? "visible" : "hidden"}`}
+      title={isVisible ? "Hide camera" : "Show camera"}
     >
-      {isVisible ? <FaEye size={16} /> : <FaEyeSlash size={16} />}
-    </div>
+      {isVisible ? <FaEye size={32} /> : <FaEyeSlash size={32} />}
+    </button>
   );
 };
 
@@ -151,10 +149,20 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                         <td key={i}>{c[k]}</td>
                       ))}
                       <td>
-                        <StreamingIcon isStreaming={c.isStreaming} size={14} />
+                        <StreamingIcon isStreaming={c.isStreaming} size={28} />
                       </td>
                       <td>
-                        <FireStatusButton isFire={c.isFire} />
+                        {c.isFire ? (
+                          <ImFire
+                            size={52}
+                            style={{
+                              color: "#ff0000",
+                              filter: "drop-shadow(0 0 0 1px #ff6600)",
+                            }}
+                          />
+                        ) : (
+                          <FireStatusButton isFire={false} />
+                        )}
                       </td>
                       <td>
                         <ViewingStatusIcon isVisible={c.isVisible} />
