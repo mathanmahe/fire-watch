@@ -45,3 +45,6 @@ paths:
 
   cam6:
     # No source = on-demand publishing from ffmpeg
+
+  cam7:
+    # No source = on-demand publishing from ffmpeg
