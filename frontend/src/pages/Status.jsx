@@ -1,39 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useCameras } from "../store/cameras.jsx";
 import StreamingIcon from "../components/StreamingIcon.jsx";
 import FireStatusButton from "../components/FireStatusButton.jsx";
 import AddCameraDialog from "../components/AddCameraDialog.jsx";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaEdit, FaTrash, FaSave, FaSearch, FaTimes } from "react-icons/fa";
 import { ImFire } from "react-icons/im";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { toggleTheme } from "../utils/theme.js";
-
-const StatusBadge = ({ label, active, isFire = false }) => {
-  const getBadgeStyle = () => {
-    if (isFire) {
-      return {
-        backgroundColor: active ? "#ff6666" : "#6bcf76",
-        color: "#ffffff",
-        padding: "4px 8px",
-        borderRadius: "12px",
-        fontSize: "12px",
-        fontWeight: "500",
-        display: "inline-block",
-      };
-    }
-    return {
-      backgroundColor: active ? "#6bcf76" : "#ff6666",
-      color: "#ffffff",
-      padding: "4px 8px",
-      borderRadius: "12px",
-      fontSize: "12px",
-      fontWeight: "500",
-      display: "inline-block",
-    };
-  };
-
-  return <span style={getBadgeStyle()}>{active ? "Yes" : "No"}</span>;
-};
 
 const ViewingStatusIcon = ({ isVisible }) => {
   return (
@@ -53,6 +26,12 @@ export default function Status({ onNavigate, currentPage = "status" }) {
   const [theme, setTheme] = useState(
     document.documentElement.getAttribute("data-theme") || "dark"
   );
+  const [editingCameraId, setEditingCameraId] = useState(null);
+  const [editedValues, setEditedValues] = useState({});
+  const [deletedCameraIds, setDeletedCameraIds] = useState(new Set());
+  const [animatingOutIds, setAnimatingOutIds] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState("all");
 
   const handleNavigate = (page) => {
     if (onNavigate) {
@@ -61,6 +40,85 @@ export default function Status({ onNavigate, currentPage = "status" }) {
   };
 
   const onToggleTheme = () => setTheme(toggleTheme());
+
+  const handleEditClick = (camera) => {
+    if (editingCameraId === camera.id) {
+      // Save action - just exit edit mode for now
+      setEditingCameraId(null);
+      setEditedValues({});
+    } else {
+      // Edit action - enter edit mode
+      setEditingCameraId(camera.id);
+      setEditedValues({
+        name: camera.name,
+        location: camera.location,
+        ip: camera.ip,
+        port: camera.port,
+      });
+    }
+  };
+
+  const handleFieldChange = (field, value) => {
+    setEditedValues((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleDeleteClick = (cameraId) => {
+    // Start animation
+    setAnimatingOutIds((prev) => new Set([...prev, cameraId]));
+
+    // After animation completes, mark as deleted
+    setTimeout(() => {
+      setDeletedCameraIds((prev) => new Set([...prev, cameraId]));
+      setAnimatingOutIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(cameraId);
+        return newSet;
+      });
+    }, 300); // Match CSS animation duration
+  };
+
+  // Filter and search cameras
+  const visibleCameras = useMemo(() => {
+    let filtered = cameras.filter((c) => !deletedCameraIds.has(c.id));
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          c.name?.toLowerCase().includes(query) ||
+          c.location?.toLowerCase().includes(query) ||
+          c.ip?.toLowerCase().includes(query) ||
+          c.port?.toString().toLowerCase().includes(query)
+      );
+    }
+
+    // Apply status filter
+    if (filter === "streaming") {
+      filtered = filtered.filter((c) => c.isStreaming);
+    } else if (filter === "fire") {
+      filtered = filtered.filter((c) => c.isFire);
+    }
+    // "all" shows everything (no additional filter needed)
+
+    return filtered;
+  }, [cameras, deletedCameraIds, searchQuery, filter]);
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+  };
+
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+  };
+
+  const handleClearFilters = () => {
+    setFilter("all");
+    setSearchQuery("");
+  };
 
   return (
     <div className="shell">
@@ -106,7 +164,57 @@ export default function Status({ onNavigate, currentPage = "status" }) {
         <div className="status-content">
           <div className="status-panel">
             <div className="status-panel-header">
-              <h3>Camera Status</h3>
+              <div className="search-container">
+                <div className="search-input-wrapper">
+                  <FaSearch className="search-icon" />
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search cameras..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      className="clear-search-btn"
+                      onClick={handleClearSearch}
+                      title="Clear search"
+                    >
+                      <FaTimes />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="filter-buttons-container">
+                <button
+                  className={`filter-btn ${filter === "all" ? "active" : ""}`}
+                  onClick={() => handleFilterChange("all")}
+                >
+                  All
+                </button>
+                <button
+                  className={`filter-btn ${
+                    filter === "streaming" ? "active" : ""
+                  }`}
+                  onClick={() => handleFilterChange("streaming")}
+                >
+                  Streaming
+                </button>
+                <button
+                  className={`filter-btn ${filter === "fire" ? "active" : ""}`}
+                  onClick={() => handleFilterChange("fire")}
+                >
+                  Fire
+                </button>
+                <button
+                  className="filter-btn clear-filter-btn"
+                  onClick={handleClearFilters}
+                >
+                  Clear
+                </button>
+              </div>
+
               <div className="add-camera-container">
                 <button
                   className={`view-btn ${showAdd ? "active" : ""}`}
@@ -132,45 +240,168 @@ export default function Status({ onNavigate, currentPage = "status" }) {
             </div>
 
             <div className="status-table-wrapper">
-              <table className="status-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Location</th>
-                    <th>Streaming</th>
-                    <th>Fire</th>
-                    <th>Viewing</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cameras.map((c) => (
-                    <tr key={c.id}>
-                      {["name", "location"].map((k, i) => (
-                        <td key={i}>{c[k]}</td>
-                      ))}
-                      <td>
-                        <StreamingIcon isStreaming={c.isStreaming} size={28} />
-                      </td>
-                      <td>
-                        {c.isFire ? (
-                          <ImFire
-                            size={52}
-                            style={{
-                              color: "#ff0000",
-                              filter: "drop-shadow(0 0 0 1px #ff6600)",
-                            }}
+              {visibleCameras.length === 0 ? (
+                <div className="no-results">
+                  <div className="no-results-icon">🔍</div>
+                  <h3>No Matches Found</h3>
+                  <p>
+                    {searchQuery
+                      ? `No cameras match "${searchQuery}"`
+                      : filter !== "all"
+                      ? `No cameras match the "${filter}" filter`
+                      : "No cameras available"}
+                  </p>
+                  {(searchQuery || filter !== "all") && (
+                    <button
+                      className="clear-all-btn"
+                      onClick={handleClearFilters}
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="modern-table">
+                  <div className="modern-table-header">
+                    <div className="header-cell name-col">Name</div>
+                    <div className="header-cell location-col">Location</div>
+                    <div className="header-cell ip-col">IP Address</div>
+                    <div className="header-cell port-col">Port</div>
+                    <div className="header-cell view-col">View</div>
+                    <div className="header-cell stream-col">Stream</div>
+                    <div className="header-cell fire-col">Fire</div>
+                    <div className="header-cell actions-col">Actions</div>
+                  </div>
+                  <div className="modern-table-body">
+                    {visibleCameras.map((c) => {
+                    const isEditing = editingCameraId === c.id;
+                    const isAnimatingOut = animatingOutIds.has(c.id);
+
+                    return (
+                      <div
+                        key={c.id}
+                        className={`modern-table-row ${
+                          isAnimatingOut ? "deleting" : ""
+                        }`}
+                      >
+                        <div className="table-cell name-col">
+                          <span className="cell-label">Name</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="edit-input"
+                              value={editedValues.name}
+                              onChange={(e) =>
+                                handleFieldChange("name", e.target.value)
+                              }
+                            />
+                          ) : (
+                            <span className="cell-value">{c.name}</span>
+                          )}
+                        </div>
+                        <div className="table-cell location-col">
+                          <span className="cell-label">Location</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="edit-input"
+                              value={editedValues.location}
+                              onChange={(e) =>
+                                handleFieldChange("location", e.target.value)
+                              }
+                            />
+                          ) : (
+                            <span className="cell-value">{c.location}</span>
+                          )}
+                        </div>
+                        <div className="table-cell ip-col">
+                          <span className="cell-label">IP</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="edit-input"
+                              value={editedValues.ip}
+                              onChange={(e) =>
+                                handleFieldChange("ip", e.target.value)
+                              }
+                            />
+                          ) : (
+                            <span className="cell-value">{c.ip || "N/A"}</span>
+                          )}
+                        </div>
+                        <div className="table-cell port-col">
+                          <span className="cell-label">Port</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="edit-input"
+                              value={editedValues.port}
+                              onChange={(e) =>
+                                handleFieldChange("port", e.target.value)
+                              }
+                            />
+                          ) : (
+                            <span className="cell-value">
+                              {c.port || "N/A"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="table-cell view-col">
+                          <span className="cell-label">View</span>
+                          <ViewingStatusIcon isVisible={c.isVisible} />
+                        </div>
+                        <div className="table-cell stream-col">
+                          <span className="cell-label">Stream</span>
+                          <StreamingIcon
+                            isStreaming={c.isStreaming}
+                            size={28}
                           />
-                        ) : (
-                          <FireStatusButton isFire={false} />
-                        )}
-                      </td>
-                      <td>
-                        <ViewingStatusIcon isVisible={c.isVisible} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </div>
+                        <div className="table-cell fire-col">
+                          <span className="cell-label">Fire</span>
+                          {c.isFire ? (
+                            <ImFire
+                              size={42}
+                              style={{
+                                color: "#ff0000",
+                                filter: "drop-shadow(0 0 0 1px #ff6600)",
+                              }}
+                            />
+                          ) : (
+                            <FireStatusButton isFire={false} />
+                          )}
+                        </div>
+                        <div className="table-cell actions-col">
+                          <span className="cell-label">Actions</span>
+                          <div className="action-buttons">
+                            <button
+                              className={`action-btn ${
+                                isEditing ? "save-btn" : "edit-btn"
+                              }`}
+                              onClick={() => handleEditClick(c)}
+                              title={isEditing ? "Save changes" : "Edit camera"}
+                            >
+                              {isEditing ? (
+                                <FaSave size={16} />
+                              ) : (
+                                <FaEdit size={16} />
+                              )}
+                            </button>
+                            <button
+                              className="action-btn delete-btn"
+                              onClick={() => handleDeleteClick(c.id)}
+                              title="Delete camera"
+                            >
+                              <FaTrash size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              )}
             </div>
           </div>
         </div>

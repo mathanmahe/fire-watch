@@ -1273,16 +1273,127 @@ body {
 }
 
 .status-panel-header {
-  padding: 10px 12px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 .status-panel-header h3 {
   margin: 0;
   color: var(--on-surface);
+}
+
+/* Search container */
+.search-container {
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  font-size: 16px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px 10px 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--on-surface);
+  font-size: 14px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--secondary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--secondary) 15%, transparent);
+}
+
+.search-input::placeholder {
+  color: var(--muted-2);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clear-search-btn:hover {
+  background: var(--surface-2);
+  color: var(--on-surface);
+}
+
+/* Filter buttons container */
+.filter-buttons-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-buttons-container .filter-btn {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: var(--on-surface);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.filter-buttons-container .filter-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.filter-buttons-container .filter-btn.active {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-color: #a78bfa;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4),
+    0 0 0 1px rgba(167, 139, 250, 0.3);
+}
+
+.filter-buttons-container .clear-filter-btn {
+  background: color-mix(in oklab, var(--muted) 8%, var(--surface-1));
+  border-color: var(--border);
+}
+
+.filter-buttons-container .clear-filter-btn:hover {
+  background: color-mix(in oklab, var(--muted) 15%, var(--surface-1));
+  border-color: var(--muted);
 }
 
 /* Add Camera button styling in status panel header */
@@ -1336,7 +1447,329 @@ body {
 
 .status-table-wrapper {
   overflow: auto;
+  padding: 0 12px;
 }
+
+/* No results empty state */
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.no-results-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.no-results h3 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.no-results p {
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 400px;
+}
+
+.clear-all-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: 1px solid #a78bfa;
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.clear-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+/* Modern table design with pill-style rows */
+.modern-table {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.modern-table-header {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.3fr 0.8fr 0.9fr 0.9fr 1fr 1fr;
+  gap: 12px;
+  padding: 16px 20px;
+  background: transparent;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.modern-table-header .header-cell {
+  color: var(--on-surface);
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.modern-table-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+.modern-table-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.3fr 0.8fr 0.9fr 0.9fr 1fr 1fr;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  align-items: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.modern-table-row:hover {
+  background: color-mix(in oklab, var(--primary) 8%, var(--surface-2));
+  border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12),
+    0 0 0 1px color-mix(in oklab, var(--primary) 25%, transparent);
+  transform: translateY(-2px);
+}
+
+.modern-table-row .table-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--on-surface);
+  overflow: hidden;
+}
+
+.modern-table-row .table-cell .cell-label {
+  display: none;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--muted);
+}
+
+.modern-table-row .table-cell .cell-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Column-specific alignments */
+.modern-table-row .view-col,
+.modern-table-row .stream-col,
+.modern-table-row .fire-col,
+.modern-table-row .actions-col,
+.modern-table-header .view-col,
+.modern-table-header .stream-col,
+.modern-table-header .fire-col,
+.modern-table-header .actions-col {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Action buttons container */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btn {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: var(--on-surface);
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.action-btn:not(:disabled):hover {
+  background: var(--surface-2);
+  border-color: color-mix(in oklab, var(--primary) 30%, var(--border));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn.edit-btn:not(:disabled):hover {
+  background: color-mix(in oklab, var(--secondary) 12%, var(--surface-1));
+  border-color: color-mix(in oklab, var(--secondary) 40%, var(--border));
+  color: var(--secondary);
+}
+
+.action-btn.delete-btn:not(:disabled):hover {
+  background: color-mix(in oklab, var(--error) 12%, var(--surface-1));
+  border-color: color-mix(in oklab, var(--error) 40%, var(--border));
+  color: var(--error);
+}
+
+/* Disabled state */
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+
+.action-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.action-btn.save-btn:not(:disabled):hover {
+  background: color-mix(in oklab, var(--ok) 12%, var(--surface-1));
+  border-color: color-mix(in oklab, var(--ok) 40%, var(--border));
+  color: var(--ok);
+}
+
+/* Edit input styling */
+.edit-input {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 2px solid color-mix(in oklab, var(--secondary) 40%, var(--border));
+  background: var(--surface-1);
+  color: var(--on-surface);
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.edit-input:focus {
+  border-color: var(--secondary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--secondary) 15%, transparent);
+}
+
+.edit-input::placeholder {
+  color: var(--muted-2);
+}
+
+/* Delete animation */
+@keyframes slideOutAndFade {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 200px;
+    margin-bottom: 12px;
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateX(30px) scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(50px) scale(0.9);
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+.modern-table-row.deleting {
+  animation: slideOutAndFade 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+  overflow: hidden;
+}
+
+/* Status page specific styling for FireStatusButton */
+.modern-table-row .fire-status-btn {
+  display: inline-block;
+  width: auto;
+  min-width: 70px;
+  height: auto;
+  min-height: 36px;
+  max-width: 100px;
+  max-height: 50px;
+  font-size: 14px;
+  padding: 8px 14px;
+  margin: 0 auto;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 1200px) {
+  .modern-table-header {
+    display: none;
+  }
+
+  .modern-table-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .modern-table-row .table-cell {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modern-table-row .table-cell .cell-label {
+    display: block;
+  }
+
+  .modern-table-row .view-col,
+  .modern-table-row .stream-col,
+  .modern-table-row .fire-col {
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .edit-input {
+    max-width: 65%;
+    font-size: 14px;
+  }
+}
+
+/* Old table styles (kept for compatibility) */
 .status-table {
   width: 100%;
   border-collapse: collapse;
@@ -1657,6 +2090,37 @@ body {
     width: 36px;
     height: 36px;
     padding: 0;
+  }
+
+  /* Status page responsive */
+  .status-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .search-container {
+    max-width: 100%;
+    order: 1;
+  }
+
+  .filter-buttons-container {
+    order: 2;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .add-camera-container {
+    order: 3;
+    display: flex;
+    justify-content: center;
+  }
+
+  .filter-buttons-container .filter-btn {
+    flex: 1;
+    min-width: 70px;
+    font-size: 12px;
+    padding: 8px 12px;
   }
 }
 
