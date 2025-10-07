@@ -11,7 +11,6 @@ import {
   isMediaMTXRunning,
 } from "./services/mediamtx.js";
 import { cameras as camerasRouter } from "./routes/cameras.js";
-import { startCloudDetector } from "./services/cloudDetector.js";
 
 const log = pino({ name: "server" });
 const app = express();
@@ -49,27 +48,6 @@ app.get("/healthz", async (_req, res) => {
 app.use("/api", requireAuth);
 app.use("/api/cameras", camerasRouter);
 
-async function startExistingDetectors() {
-  try {
-    const activeCameras = await prisma.camera.findMany({
-      where: {
-        isActive: true,
-        detection: "CLOUD",
-      },
-    });
-
-    log.info(
-      { count: activeCameras.length },
-      "Starting cloud detectors for active cameras"
-    );
-
-    for (const cam of activeCameras) {
-      startCloudDetector(cam);
-    }
-  } catch (error) {
-    log.error({ error: error.message }, "Failed to start existing detectors");
-  }
-}
 
 async function main() {
   await prisma.$connect();
@@ -83,9 +61,6 @@ async function main() {
     log.error({ error: e.message }, "Failed to start MediaMtx container");
     // Continue anyway - container might already be running externally
   }
-
-  // Start detectors for all active cameras on server start - UNCOMMENT THIS FOR PRODUCTION
-  // await startExistingDetectors();
 
   app.listen(cfg.port, () => log.info(`API listening on :${cfg.port}`));
 }
