@@ -198,6 +198,13 @@ export function CamerasProvider({ children }) {
     []
   );
 
+  const setCameraVisibilities = useMemo(
+    () => (visibilityMap) => {
+      setCameraVisibility(visibilityMap);
+    },
+    []
+  );
+
   const camerasWithStatus = useMemo(
     () =>
       cameras.map((cam) => ({
@@ -216,8 +223,15 @@ export function CamerasProvider({ children }) {
       setCameras,
       updateCameraStatus,
       toggleCameraVisibility,
+      setCameraVisibilities,
     }),
-    [camerasWithStatus, addCamera, updateCameraStatus, toggleCameraVisibility]
+    [
+      camerasWithStatus,
+      addCamera,
+      updateCameraStatus,
+      toggleCameraVisibility,
+      setCameraVisibilities,
+    ]
   );
 
   return <CamerasCtx.Provider value={value}>{children}</CamerasCtx.Provider>;

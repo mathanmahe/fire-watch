@@ -266,7 +266,7 @@ function Dashboard() {
                   onExited={() => setIsExiting(false)}
                 >
                   <div ref={statusPanelRef}>
-                    <MiniStatusPanel />
+                    <MiniStatusPanel viewMode={viewMode} />
                   </div>
                 </CSSTransition>
               </section>

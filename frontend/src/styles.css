@@ -980,12 +980,55 @@ body {
   padding: 10px 12px;
   background: #2a3441;
   border-bottom: 1px solid #3a4552;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .mini-status-header h3 {
   margin: 0;
   color: var(--on-surface); /* keep text bright */
   font-size: 14px;
   font-weight: 600;
+  text-align: center;
+}
+
+.mini-status-filters {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.filter-btn {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: var(--on-surface);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1;
+}
+
+.filter-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-color: #a78bfa;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4),
+    0 0 0 1px rgba(167, 139, 250, 0.3);
+}
+
+.filter-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .mini-status-list {
@@ -1082,6 +1125,24 @@ body {
   background: color-mix(in oklab, var(--secondary) 14%, var(--surface-2));
   border-bottom: 1px solid
     color-mix(in oklab, var(--secondary) 24%, var(--border));
+}
+
+[data-theme="light"] .filter-btn {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+[data-theme="light"] .filter-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+[data-theme="light"] .filter-btn.active {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-color: #a78bfa;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4),
+    0 0 0 1px rgba(167, 139, 250, 0.3);
 }
 
 [data-theme="light"] .mini-status-item {
