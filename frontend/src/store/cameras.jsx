@@ -7,6 +7,8 @@ const seed = [
     id: "cam-1",
     name: "cam-1",
     location: "Lobby",
+    ip: "192.168.1.101",
+    port: "8554",
     detection: "local",
     stream: {
       type: "webrtc",
@@ -18,6 +20,8 @@ const seed = [
     id: "cam-2",
     name: "cam-2",
     location: "Dock",
+    ip: "192.168.1.102",
+    port: "8554",
     detection: "local",
     stream: {
       type: "webrtc",
@@ -29,6 +33,8 @@ const seed = [
     id: "cam-3",
     name: "cam-3",
     location: "Yard",
+    ip: "192.168.1.103",
+    port: "8554",
     detection: "local",
     stream: {
       type: "webrtc",
@@ -40,6 +46,8 @@ const seed = [
     id: "cam-4",
     name: "cam-4",
     location: "Lab",
+    ip: "192.168.1.104",
+    port: "8554",
     detection: "local",
     stream: {
       type: "webrtc",
@@ -51,6 +59,8 @@ const seed = [
     id: "cam-5",
     name: "cam-5",
     location: "Warehouse",
+    ip: "192.168.1.105",
+    port: "8554",
     detection: "local",
     stream: {
       type: "webrtc",
@@ -59,37 +69,39 @@ const seed = [
     },
   },
 
-  // cloud detection (AWS)
+  // local detection for testing (cameras 6-7)
   {
     id: "cam-6",
     name: "cam-6",
     location: "North",
-    detection: "cloud",
+    ip: "192.168.1.106",
+    port: "8554",
+    detection: "local",
     stream: {
       type: "webrtc",
       gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam6",
     },
-    awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
-    cloudFps: 2,
   },
   {
     id: "cam-7",
     name: "cam-7",
     location: "East",
-    detection: "cloud",
+    ip: "192.168.1.107",
+    port: "8554",
+    detection: "local",
     stream: {
       type: "webrtc",
       gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
       name: "cam7",
     },
-    awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
-    cloudFps: 2,
   },
   {
     id: "cam-8",
     name: "cam-8",
     location: "South",
+    ip: "192.168.1.108",
+    port: "8554",
     detection: "cloud",
     stream: {
       type: "webrtc",
@@ -103,6 +115,8 @@ const seed = [
     id: "cam-9",
     name: "cam-9",
     location: "West",
+    ip: "192.168.1.109",
+    port: "8554",
     detection: "cloud",
     stream: {
       type: "webrtc",
@@ -116,6 +130,8 @@ const seed = [
     id: "cam-10",
     name: "cam-10",
     location: "Roof",
+    ip: "192.168.1.110",
+    port: "8554",
     detection: "cloud",
     stream: {
       type: "webrtc",
@@ -198,6 +214,13 @@ export function CamerasProvider({ children }) {
     []
   );
 
+  const setCameraVisibilities = useMemo(
+    () => (visibilityMap) => {
+      setCameraVisibility(visibilityMap);
+    },
+    []
+  );
+
   const camerasWithStatus = useMemo(
     () =>
       cameras.map((cam) => ({
@@ -216,8 +239,15 @@ export function CamerasProvider({ children }) {
       setCameras,
       updateCameraStatus,
       toggleCameraVisibility,
+      setCameraVisibilities,
     }),
-    [camerasWithStatus, addCamera, updateCameraStatus, toggleCameraVisibility]
+    [
+      camerasWithStatus,
+      addCamera,
+      updateCameraStatus,
+      toggleCameraVisibility,
+      setCameraVisibilities,
+    ]
   );
 
   return <CamerasCtx.Provider value={value}>{children}</CamerasCtx.Provider>;

@@ -473,12 +473,12 @@ export default function CameraTile({ cam }) {
     <div className="tile">
       <div className="tile-header">
         <div className="tile-title">
+          <StreamingIcon isStreaming={isStreaming} size={22} />
           <span className="name">{cam.name}</span>
           <span className="location">{cam.location}</span>
         </div>
         <div className="tile-status-icons">
           <FireStatusButton isFire={isFire} />
-          <StreamingIcon isStreaming={isStreaming} size={14} />
         </div>
       </div>
       <div className="video-wrap" onMouseEnter={() => setViewed(true)}>

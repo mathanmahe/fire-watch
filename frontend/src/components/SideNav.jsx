@@ -10,7 +10,14 @@ export default function SideNav({ onNavigate, onLogout, currentPage }) {
 
   return (
     <aside className="sidenav">
-      <div className="brand">Fire Watch</div>
+      <div className="brand">
+        <img
+          src="/images/fire-icon.png"
+          alt="Fire Watch Logo"
+          className="brand-logo"
+        />
+        FireWatch
+      </div>
       <nav>
         <a
           className={currentPage === "video" ? "active" : ""}
