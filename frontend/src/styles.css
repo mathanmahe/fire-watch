@@ -18,92 +18,83 @@
 /* Dark theme palette - Modern Dark UI */
 [data-theme="dark"] {
   /* Core colors */
-  --bg: #0f0f0f; /* Deep black background */
-  --surface: #1a1a1a; /* Surface (base) */
-  --surface-1: #1f1f1f; /* Slight elevation */
-  --surface-2: #252525; /* Higher elevation */
-  --border: #2a2a2a; /* Subtle borders */
-  --overlay: rgba(15, 15, 15, 0.95);
+  --bg: #282a36;
+  --surface: #44475a;
+  --surface-1: #44475a;
+  --surface-2: #6272a4;
+  --border: #6272a4;
+  --overlay: rgba(40, 42, 54, 0.95);
 
-  /* Accents - Modern dark theme colors */
-  --primary: #8b5cf6; /* Vibrant purple */
-  --primary-variant: #7c3aed; /* Darker purple */
-  --secondary: #06b6d4; /* Bright cyan/teal */
-  --accent: #f97316; /* Orange accent for FireWatch branding */
-  --error: #ef4444;
+  /* Accents */
+  --primary: #bd93f9;
+  --primary-variant: #8be9fd;
+  --secondary: #8be9fd;
+  --accent: #f97316; /* Orange accent for FireWatch branding - PRESERVED */
+  --error: #ff5555;
 
   /* Content colors (on-*) */
-  --on-bg: #ffffff;
-  --on-surface: #ffffff;
-  --on-primary: #000000;
-  --on-secondary: #000000;
-  --on-error: #000000;
+  --on-bg: #f8f8f2;
+  --on-surface: #f8f8f2;
+  --on-primary: #282a36;
+  --on-secondary: #282a36;
+  --on-error: #f8f8f2;
 
   /* Neutrals */
-  --ink: #f8fafc; /* Primary text - brighter for dark mode */
-  --muted: #94a3b8; /* Muted text */
-  --muted-2: #64748b;
+  --ink: #f8f8f2;
+  --muted: #6272a4;
+  --muted-2: #50fa7b;
 
-  /* Status colors - more vibrant for dark mode */
-  --ok: #10b981; /* Bright green */
-  --warn: #f59e0b; /* Amber */
-  --danger: #ef4444; /* Red */
+  /* Status colors */
+  --ok: #50fa7b;
+  --warn: #ffb86c;
+  --danger: #ff5555;
 
   /* Focus ring */
-  --focus: 0 0 0 2px rgba(139, 92, 246, 0.5);
+  --focus: 0 0 0 2px rgba(139, 233, 253, 0.5);
 
-  /* FireWatch Brand Colors for Dark Mode */
-  --brand-orange: #f97316; /* Orange for logo and buttons */
-  --brand-orange-light: #fb923c; /* Lighter orange for gradients */
-  --brand-orange-shadow: rgba(249, 115, 22, 0.4); /* Orange shadow */
+  /* FireWatch Brand Colors for Dark Mode - PRESERVED ORANGE */
+  --brand-orange: #f97316; /* Orange for logo and buttons - PRESERVED */
+  --brand-orange-light: #fb923c; /* Lighter orange for gradients - PRESERVED */
+  --brand-orange-shadow: rgba(
+    249,
+    115,
+    22,
+    0.4
+  ); /* Orange shadow - PRESERVED */
   --brand-blue-gradient: linear-gradient(
     135deg,
-    #1e293b 0%,
-    #334155 50%,
-    #475569 100%
-  ); /* Darker blue gradient navbar */
-  --brand-blue-border: #475569; /* Darker blue border for navbar */
-  --brand-blue-shadow: rgba(30, 41, 59, 0.4); /* Darker blue shadow */
-  --brand-purple-gradient: linear-gradient(
-    135deg,
-    #7c3aed 0%,
-    #8b5cf6 100%
-  ); /* Darker purple gradient for buttons */
-  --brand-purple-border: #a78bfa; /* Purple border */
-  --brand-purple-shadow: rgba(124, 58, 237, 0.4); /* Purple shadow */
+    #282a36 0%,
+    #44475a 50%,
+    #6272a4 100%
+  );
+  --brand-blue-border: #6272a4;
+  --brand-blue-shadow: rgba(68, 71, 90, 0.4);
+  --brand-purple-gradient: linear-gradient(135deg, #bd93f9 0%, #8be9fd 100%);
+  --brand-purple-border: #bd93f9;
+  --brand-purple-shadow: rgba(189, 147, 249, 0.4);
 
   /* Status Colors for Dark Mode */
-  --status-streaming: #10b981; /* Bright green for streaming */
-  --status-offline: #f59e0b; /* Amber for offline/failed */
-  --status-fire-red: #ef4444; /* Bright red for fire status */
-  --status-fire-red-border: #dc2626; /* Fire red border */
-  --status-clear-green: #10b981; /* Bright green for clear status */
-  --status-clear-green-border: #059669; /* Clear green border */
+  --status-streaming: #50fa7b;
+  --status-offline: #ffb86c;
+  --status-fire-red: #ff5555;
+  --status-fire-red-border: #ff6b6b;
+  --status-clear-green: #50fa7b;
+  --status-clear-green-border: #4ade80;
 
   /* UI Specific Colors for Dark Mode */
-  --ui-text-white: #ffffff; /* White text */
-  --ui-text-dark: #000000; /* Black text */
-  --ui-text-slate: #f1f5f9; /* Light slate text */
-  --ui-text-slate-dark: #0f172a; /* Dark slate text */
-  --ui-bg-black: #000000; /* Pure black background */
-  --ui-overlay-dark: rgba(0, 0, 0, 0.5); /* Dark overlay */
-  --ui-overlay-light: rgba(
-    255,
-    255,
-    255,
-    0.1
-  ); /* Light overlay for dark mode */
-  --ui-overlay-light-hover: rgba(255, 255, 255, 0.15); /* Light overlay hover */
-  --ui-overlay-border: rgba(255, 255, 255, 0.2); /* Light overlay border */
-  --ui-overlay-border-hover: rgba(
-    255,
-    255,
-    255,
-    0.3
-  ); /* Light overlay border hover */
+  --ui-text-white: #f8f8f2;
+  --ui-text-dark: #282a36;
+  --ui-text-slate: #f8f8f2;
+  --ui-text-slate-dark: #282a36;
+  --ui-bg-black: #282a36;
+  --ui-overlay-dark: rgba(40, 42, 54, 0.8);
+  --ui-overlay-light: rgba(248, 248, 242, 0.1);
+  --ui-overlay-light-hover: rgba(248, 248, 242, 0.15);
+  --ui-overlay-border: rgba(248, 248, 242, 0.2);
+  --ui-overlay-border-hover: rgba(248, 248, 242, 0.3);
 
   /* Special UI Colors for Dark Mode */
-  --ui-teal: #06b6d4; /* Bright teal for visibility toggle */
+  --ui-teal: #8be9fd;
 }
 
 /* Light theme palette — FireWatch (orange/blue) */
@@ -303,12 +294,12 @@ body {
 
 /* Dark theme scrollbar */
 [data-theme="dark"] *::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #6272a4;
   border-radius: 8px;
 }
 
 [data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #8be9fd;
 }
 
 /* ==========================================================================
@@ -1160,10 +1151,10 @@ body {
      MINI STATUS PANEL & STATUS PAGE
      ========================================================================== */
 
-/* MINI STATUS PANEL — custom blue-gray */
+/* MINI STATUS PANEL */
 .mini-status-panel {
-  background: #01070d; /* custom blue-gray background */
-  border: 1px solid #2a3441;
+  background: #282a36;
+  border: 1px solid #6272a4;
   border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
@@ -1176,9 +1167,9 @@ body {
 
 /* Dark theme mini status panel */
 [data-theme="dark"] .mini-status-panel {
-  background: #0f1419; /* Darker background for better contrast */
-  border: 1px solid #1e293b;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  background: #282a36;
+  border: 1px solid #6272a4;
+  box-shadow: 0 4px 12px rgba(40, 42, 54, 0.4);
 }
 
 /* CSSTransition classes for status panel */
@@ -1207,11 +1198,11 @@ body {
     transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* header gets a nice blue-gray tint instead of green */
+/* header styling */
 .mini-status-header {
   padding: 10px 12px;
-  background: #2a3441;
-  border-bottom: 1px solid #3a4552;
+  background: #44475a;
+  border-bottom: 1px solid #6272a4;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1219,8 +1210,8 @@ body {
 
 /* Dark theme mini status header */
 [data-theme="dark"] .mini-status-header {
-  background: #1a202c; /* Distinct header background */
-  border-bottom: 1px solid #2d3748;
+  background: #44475a;
+  border-bottom: 1px solid #6272a4;
 }
 .mini-status-header h3 {
   margin: 0;
@@ -1251,9 +1242,9 @@ body {
 
 /* Dark theme filter buttons */
 [data-theme="dark"] .filter-btn {
-  background: #2d3748; /* Distinct button background */
-  border: 1px solid #4a5568;
-  color: #e2e8f0;
+  background: #44475a;
+  border: 1px solid #6272a4;
+  color: #f8f8f2;
 }
 
 .filter-btn:hover:not(:disabled) {
@@ -1264,8 +1255,8 @@ body {
 
 /* Dark theme filter button hover */
 [data-theme="dark"] .filter-btn:hover:not(:disabled) {
-  background: #4a5568;
-  border-color: #718096;
+  background: #6272a4;
+  border-color: #8be9fd;
   transform: translateY(-1px);
 }
 
@@ -1315,9 +1306,9 @@ body {
 
 /* Dark theme mini status item cards */
 [data-theme="dark"] .mini-status-item {
-  background: #1e293b; /* Distinct card background */
-  border: 1px solid #334155;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: #44475a;
+  border: 1px solid #6272a4;
+  box-shadow: 0 2px 4px rgba(40, 42, 54, 0.2);
 }
 .mini-status-item:hover {
   background: color-mix(in oklab, var(--accent) 10%, var(--surface-2));
@@ -1328,9 +1319,9 @@ body {
 
 /* Dark theme mini status item hover */
 [data-theme="dark"] .mini-status-item:hover {
-  background: #334155; /* Lighter blue-gray on hover */
-  border-color: #475569;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  background: #6272a4;
+  border-color: #8be9fd;
+  box-shadow: 0 4px 8px rgba(40, 42, 54, 0.3);
   transform: translateY(-2px);
 }
 .mini-status-item:last-child {
@@ -1554,9 +1545,9 @@ body {
 
 /* Dark theme status header */
 [data-theme="dark"] .status-header {
-  background: #1a202c;
-  border-bottom: 1px solid #2d3748;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  background: #44475a;
+  border-bottom: 1px solid #6272a4;
+  box-shadow: 0 2px 4px rgba(40, 42, 54, 0.3);
 }
 .status-header h2 {
   font-size: 24px;
@@ -1598,8 +1589,8 @@ body {
 
 /* Dark theme status panel header */
 [data-theme="dark"] .status-panel-header {
-  background: #1e293b;
-  border-bottom: 1px solid #334155;
+  background: #44475a;
+  border-bottom: 1px solid #6272a4;
 }
 .status-panel-header h3 {
   margin: 0;
@@ -1630,7 +1621,7 @@ body {
 
 /* Dark theme search icon */
 [data-theme="dark"] .search-icon {
-  color: #9ca3af;
+  color: #6272a4;
 }
 
 .search-input {
@@ -1647,15 +1638,15 @@ body {
 
 /* Dark theme search input */
 [data-theme="dark"] .search-input {
-  background: #2d3748;
-  border: 1px solid #4a5568;
-  color: #e2e8f0;
+  background: #44475a;
+  border: 1px solid #6272a4;
+  color: #f8f8f2;
 }
 
 [data-theme="dark"] .search-input:focus {
-  background: #374151;
-  border-color: #06b6d4;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+  background: #6272a4;
+  border-color: #8be9fd;
+  box-shadow: 0 0 0 3px rgba(139, 233, 253, 0.15);
 }
 
 .search-input:focus {
@@ -1685,12 +1676,12 @@ body {
 
 /* Dark theme clear search button */
 [data-theme="dark"] .clear-search-btn {
-  color: #9ca3af;
+  color: #6272a4;
 }
 
 [data-theme="dark"] .clear-search-btn:hover {
-  background: #4a5568;
-  color: #e2e8f0;
+  background: #6272a4;
+  color: #f8f8f2;
 }
 
 .clear-search-btn:hover {
@@ -1723,16 +1714,16 @@ body {
 
 /* Dark theme filter buttons in status panel */
 [data-theme="dark"] .filter-buttons-container .filter-btn {
-  background: #2d3748;
-  border: 1px solid #4a5568;
-  color: #e2e8f0;
+  background: #44475a;
+  border: 1px solid #6272a4;
+  color: #f8f8f2;
 }
 
 [data-theme="dark"] .filter-buttons-container .filter-btn:hover:not(:disabled) {
-  background: #4a5568;
-  border-color: #718096;
+  background: #6272a4;
+  border-color: #8be9fd;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(40, 42, 54, 0.2);
 }
 
 .filter-buttons-container .filter-btn:hover:not(:disabled) {
@@ -1783,17 +1774,17 @@ body {
 
 /* Dark theme add camera button */
 [data-theme="dark"] .status-panel-header .view-btn {
-  background: #2d3748;
-  border: 1px solid #4a5568;
-  color: #e2e8f0;
+  background: #44475a;
+  border: 1px solid #6272a4;
+  color: #f8f8f2;
 }
 
 [data-theme="dark"] .status-panel-header .view-btn:hover {
-  background: #4a5568;
-  border-color: #718096;
-  color: #ffffff;
+  background: #6272a4;
+  border-color: #8be9fd;
+  color: #f8f8f2;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(40, 42, 54, 0.2);
 }
 
 .status-panel-header .view-btn svg {
@@ -1941,9 +1932,9 @@ body {
 
 /* Dark theme modern table rows */
 [data-theme="dark"] .modern-table-row {
-  background: #1e293b;
-  border: 1px solid #334155;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: #44475a;
+  border: 1px solid #6272a4;
+  box-shadow: 0 2px 4px rgba(40, 42, 54, 0.2);
 }
 
 .modern-table-row:hover {
@@ -1956,9 +1947,10 @@ body {
 
 /* Dark theme table row hover */
 [data-theme="dark"] .modern-table-row:hover {
-  background: #334155;
-  border-color: #475569;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(71, 85, 105, 0.3);
+  background: #6272a4;
+  border-color: #8be9fd;
+  box-shadow: 0 6px 16px rgba(40, 42, 54, 0.3),
+    0 0 0 1px rgba(139, 233, 253, 0.3);
   transform: translateY(-2px);
 }
 
@@ -1972,7 +1964,7 @@ body {
 
 /* Dark theme table cell text */
 [data-theme="dark"] .modern-table-row .table-cell {
-  color: #e2e8f0;
+  color: #f8f8f2;
 }
 
 .modern-table-row .table-cell .cell-label {
@@ -2032,9 +2024,9 @@ body {
 
 /* Dark theme action buttons */
 [data-theme="dark"] .action-btn {
-  background: #2d3748;
-  border: 1px solid #4a5568;
-  color: #e2e8f0;
+  background: #44475a;
+  border: 1px solid #6272a4;
+  color: #f8f8f2;
 }
 
 .action-btn:not(:disabled):hover {
@@ -2046,10 +2038,10 @@ body {
 
 /* Dark theme action button hover */
 [data-theme="dark"] .action-btn:not(:disabled):hover {
-  background: #4a5568;
-  border-color: #718096;
+  background: #6272a4;
+  border-color: #8be9fd;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px rgba(40, 42, 54, 0.3);
 }
 
 .action-btn.edit-btn:not(:disabled):hover {
@@ -2066,15 +2058,15 @@ body {
 
 /* Dark theme specific action button hovers */
 [data-theme="dark"] .action-btn.edit-btn:not(:disabled):hover {
-  background: rgba(6, 182, 212, 0.2);
-  border-color: #06b6d4;
-  color: #06b6d4;
+  background: rgba(139, 233, 253, 0.2);
+  border-color: #8be9fd;
+  color: #8be9fd;
 }
 
 [data-theme="dark"] .action-btn.delete-btn:not(:disabled):hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
-  color: #ef4444;
+  background: rgba(255, 85, 85, 0.2);
+  border-color: #ff5555;
+  color: #ff5555;
 }
 
 /* Disabled state */
@@ -2112,15 +2104,15 @@ body {
 
 /* Dark theme edit input */
 [data-theme="dark"] .edit-input {
-  background: #2d3748;
-  border: 2px solid #4a5568;
-  color: #e2e8f0;
+  background: #44475a;
+  border: 2px solid #6272a4;
+  color: #f8f8f2;
 }
 
 [data-theme="dark"] .edit-input:focus {
-  border-color: #06b6d4;
-  background: #374151;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+  border-color: #8be9fd;
+  background: #6272a4;
+  box-shadow: 0 0 0 3px rgba(139, 233, 253, 0.15);
 }
 
 .edit-input:focus {
@@ -2559,7 +2551,7 @@ body {
 
 /* Dark theme form labels */
 [data-theme="dark"] .row label {
-  color: #e2e8f0;
+  color: #f8f8f2;
   font-weight: 500;
   font-size: 14px;
 }
@@ -2586,21 +2578,21 @@ body {
 /* Dark theme form inputs */
 [data-theme="dark"] .form input,
 [data-theme="dark"] .form select {
-  background: #2d3748;
-  border: 1px solid #4a5568;
-  color: #e2e8f0;
+  background: #44475a;
+  border: 1px solid #6272a4;
+  color: #f8f8f2;
 }
 
 [data-theme="dark"] .form input:focus,
 [data-theme="dark"] .form select:focus {
-  background: #374151;
-  border-color: #06b6d4;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+  background: #6272a4;
+  border-color: #8be9fd;
+  box-shadow: 0 0 0 3px rgba(139, 233, 253, 0.15);
   outline: none;
 }
 
 [data-theme="dark"] .form input::placeholder {
-  color: #9ca3af;
+  color: #6272a4;
 }
 .form button {
   padding: 8px 12px;
@@ -2621,15 +2613,15 @@ body {
 
 /* Dark theme form buttons */
 [data-theme="dark"] .form button {
-  background: #06b6d4;
-  color: #000000;
+  background: #8be9fd;
+  color: #282a36;
   font-weight: 600;
 }
 
 [data-theme="dark"] .form button:hover {
-  background: #0891b2;
+  background: #50fa7b;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(6, 182, 212, 0.3);
+  box-shadow: 0 4px 8px rgba(80, 250, 123, 0.3);
 }
 
 /* ==========================================================================
@@ -2673,9 +2665,9 @@ body {
 
 /* Dark theme add camera dialog */
 [data-theme="dark"] .add-camera-dialog {
-  background: #1e293b;
-  border: 1px solid #334155;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: #44475a;
+  border: 1px solid #6272a4;
+  box-shadow: 0 8px 32px rgba(40, 42, 54, 0.4);
 }
 
 .add-camera-dialog h3 {
@@ -2687,7 +2679,7 @@ body {
 
 /* Dark theme add camera dialog title */
 [data-theme="dark"] .add-camera-dialog h3 {
-  color: #e2e8f0;
+  color: #f8f8f2;
 }
 
 /* ==========================================================================
