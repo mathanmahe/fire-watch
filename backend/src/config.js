@@ -8,8 +8,7 @@ export const cfg = {
     region: process.env.COGNITO_REGION || 'us-east-1'
   },
   mediamtx: {
-    bin: process.env.MEDIAMTX_BIN || 'mediamtx',
-    config: process.env.MEDIAMTX_CONFIG
+    config: process.env.MEDIAMTX_CONFIG || './mediamtx.yml'
   },
   ffmpeg: process.env.FFMPEG_BIN || 'ffmpeg',
   fireEndpoint: process.env.FIRE_ENDPOINT,
