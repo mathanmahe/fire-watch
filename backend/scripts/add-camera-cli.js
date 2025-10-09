@@ -1,6 +1,6 @@
 import readline from 'readline';
 import { prisma } from '../src/db/prisma.js';
-import { getValidToken } from '../test-auto-refresh.js';
+import { getValidToken, clearTokens } from '../test-auto-refresh.js';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { cfg } from '../src/config.js';
 import 'dotenv/config';
@@ -202,8 +202,8 @@ async function showStatus(token) {
     
     console.log('\nDetection Status:');
     status.forEach(cam => {
-      const running = cam.isRunning ? 'RUNNING' : 'STOPPED';
-      console.log(`  ${cam.id}. ${cam.name} - ${cam.location} [${running}]`);
+      const running = cam.isRunning ? '🟢 RUNNING' : '🔴 STOPPED';
+      console.log(`  ${cam.id}. ${cam.camera} - ${cam.location} [${running}]`);
     });
     console.log('');
     
@@ -220,7 +220,8 @@ async function showMenu(user, token) {
   console.log('3. Start fire detection');
   console.log('4. Stop fire detection');
   console.log('5. Detection status');
-  console.log('6. Exit\n');
+  console.log('6. Logout');
+  console.log('7. Exit\n');
   
   const choice = await question('Select option: ');
   
@@ -241,6 +242,10 @@ async function showMenu(user, token) {
       await showStatus(token);
       return true;
     case '6':
+      clearTokens();
+      console.log('\nLogged out successfully.\n');
+      return false;
+    case '7':
       return false;
     default:
       console.log('\nInvalid choice.\n');
@@ -251,7 +256,27 @@ async function showMenu(user, token) {
 async function main() {
   console.log('\n=== Fire Watch ===\n');
   
-  const token = await getValidToken();
+  // Ask user if they want to login or exit
+  const choice = await question('1. Login\n2. Exit\n\nChoice: ');
+  
+  if (choice !== '1') {
+    console.log('\nGoodbye!\n');
+    rl.close();
+    await prisma.$disconnect();
+    return;
+  }
+  
+  // Get token (will prompt for login)
+  let token;
+  try {
+    token = await getValidToken();
+  } catch (error) {
+    console.log('\nLogin failed. Exiting.\n');
+    rl.close();
+    await prisma.$disconnect();
+    return;
+  }
+  
   const user = await getUserFromToken(token);
   
   let continueMenu = true;
