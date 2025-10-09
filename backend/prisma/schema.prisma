@@ -10,9 +10,10 @@ datasource db {
 model Camera {
   id         Int      @id @default(autoincrement())
   userId     String   // Cognito user sub
-  camera     String   // Camera name/identifier
+  name       String   // Camera name/identifier
   location   String?  // Physical location
-  ip         String?  // IP address or RTSP URL (e.g., "192.168.1.201:554")
+  ip         String?  // IP address (e.g., "192.168.1.201")
+  port       String?  // Port number (e.g., "554")
   username   String?  // RTSP/camera auth username
   password   String?  // RTSP/camera auth password (should encrypt in production)
   detection  String   @default("LOCAL")
@@ -23,10 +24,10 @@ model Camera {
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  
+
   detections Detection[]
 
-  @@unique([userId, camera])
+  @@unique([userId, name])
   @@index([userId])
 }
 
