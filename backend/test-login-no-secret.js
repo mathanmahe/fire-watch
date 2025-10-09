@@ -90,4 +90,7 @@ async function login(username, tempPassword, newPassword) {
   }
 }
 
-login("mathanmahe99@gmail.com", "MyNewPassword123!", "MyNewPassword123!");
+let username = "username";
+let tempPassword = "tempPassword";
+let newPassword = "newPassword";
+login(username, tempPassword, newPassword);
