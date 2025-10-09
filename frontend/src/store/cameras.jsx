@@ -1,143 +1,127 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
+import { cameraApi } from "../services/cameraApi.js";
+
+// Mode detection: true = use seed data, false = fetch from DB
+const USE_SEED_DATA = import.meta.env.VITE_USE_SEED_DATA === "true";
 
 // Seed 10 cameras (5 local, 5 cloud). Edit URLs to match your setup.
 const seed = [
   // local in-browser detection (HLS or WebRTC)
   {
-    id: "cam-1",
+    id: 1,
     name: "cam-1",
     location: "Lobby",
     ip: "192.168.1.101",
     port: "8554",
-    detection: "local",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam1",
-    },
+    detection: "LOCAL",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam1",
   },
   {
-    id: "cam-2",
+    id: 2,
     name: "cam-2",
     location: "Dock",
     ip: "192.168.1.102",
     port: "8554",
-    detection: "local",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam2",
-    },
+    detection: "LOCAL",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam2",
   },
   {
-    id: "cam-3",
+    id: 3,
     name: "cam-3",
     location: "Yard",
     ip: "192.168.1.103",
     port: "8554",
-    detection: "local",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam3",
-    },
+    detection: "LOCAL",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam3",
   },
   {
-    id: "cam-4",
+    id: 4,
     name: "cam-4",
     location: "Lab",
     ip: "192.168.1.104",
     port: "8554",
-    detection: "local",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam4",
-    },
+    detection: "LOCAL",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam4",
   },
   {
-    id: "cam-5",
+    id: 5,
     name: "cam-5",
     location: "Warehouse",
     ip: "192.168.1.105",
     port: "8554",
-    detection: "local",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam5",
-    },
+    detection: "LOCAL",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam5",
   },
 
   // local detection for testing (cameras 6-7)
   {
-    id: "cam-6",
+    id: 6,
     name: "cam-6",
     location: "North",
     ip: "192.168.1.106",
     port: "8554",
-    detection: "local",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam6",
-    },
+    detection: "LOCAL",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam6",
   },
   {
-    id: "cam-7",
+    id: 7,
     name: "cam-7",
     location: "East",
     ip: "192.168.1.107",
     port: "8554",
-    detection: "local",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam7",
-    },
+    detection: "LOCAL",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam7",
   },
   {
-    id: "cam-8",
+    id: 8,
     name: "cam-8",
     location: "South",
     ip: "192.168.1.108",
     port: "8554",
-    detection: "cloud",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam8",
-    },
+    detection: "CLOUD",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam8",
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
     cloudFps: 2,
   },
   {
-    id: "cam-9",
+    id: 9,
     name: "cam-9",
     location: "West",
     ip: "192.168.1.109",
     port: "8554",
-    detection: "cloud",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam9",
-    },
+    detection: "CLOUD",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam9",
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
     cloudFps: 2,
   },
   {
-    id: "cam-10",
+    id: 10,
     name: "cam-10",
     location: "Roof",
     ip: "192.168.1.110",
     port: "8554",
-    detection: "cloud",
-    stream: {
-      type: "webrtc",
-      gatewayBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-      name: "cam10",
-    },
+    detection: "CLOUD",
+    streamType: "WEBRTC",
+    webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
+    streamName: "cam10",
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
     cloudFps: 2,
   },
@@ -146,46 +130,98 @@ const seed = [
 const CamerasCtx = createContext(null);
 
 export function CamerasProvider({ children }) {
-  const [cameras, setCameras] = useState(seed);
+  // Initialize with seed data if in seed mode, empty array if in DB mode
+  const [cameras, setCameras] = useState(USE_SEED_DATA ? seed : []);
   const [cameraStatuses, setCameraStatuses] = useState({});
-  const [cameraVisibility, setCameraVisibility] = useState(() => {
-    // For local detection testing, only have cam1 visible by default
-    return {
-      "cam-1": true, // cam1 is visible
-      "cam-2": false, // hide cam2
-      "cam-3": false, // hide cam3
-      "cam-4": false, // hide cam4
-      "cam-5": false, // hide cam5
-      "cam-6": false, // hide cam6
-      "cam-7": false, // hide cam7
-      "cam-8": false, // hide cam8
-      "cam-9": false, // hide cam9
-      "cam-10": false, // hide cam10
-    };
+  const [loading, setLoading] = useState(!USE_SEED_DATA); // Loading state for DB mode
+  const [error, setError] = useState(null);
 
-    /* 
-    // UNCOMMENT BELOW AND COMMENT OUT ABOVE TO SHOW ALL CAMERAS BY DEFAULT
-    return {
-      "cam-1": true,   // cam1 visible
-      "cam-2": true,   // cam2 visible
-      "cam-3": true,   // cam3 visible
-      "cam-4": true,   // cam4 visible
-      "cam-5": true,   // cam5 visible
-      "cam-6": true,   // cam6 visible
-      "cam-7": true,   // cam7 visible
-      "cam-8": true,   // cam8 visible
-      "cam-9": true,   // cam9 visible
-      "cam-10": true,  // cam9 visible
-    };
-    */
+  const [cameraVisibility, setCameraVisibility] = useState(() => {
+    if (USE_SEED_DATA) {
+      // Seed mode: only have cam1 visible by default for local testing
+      return {
+        1: true,
+        2: false,
+        3: false,
+        4: false,
+        5: false,
+        6: false,
+        7: false,
+        8: false,
+        9: false,
+        10: false,
+      };
+    } else {
+      // DB mode: all cameras hidden by default (will be shown via WebSocket or manual toggle)
+      return {};
+    }
   });
 
+  // Fetch cameras from API in DB mode
+  useEffect(() => {
+    if (!USE_SEED_DATA) {
+      fetchCamerasFromDB();
+    }
+  }, []);
+
+  const fetchCamerasFromDB = async () => {
+    setLoading(true);
+    setError(null);
+    console.log("[DB Mode] Loading cameras from database...");
+    try {
+      const camerasFromDB = await cameraApi.getCameras();
+      console.log(`[DB Mode] ✓ Fetched ${camerasFromDB.length} cameras from database`);
+      setCameras(camerasFromDB);
+
+      // Initialize visibility: all cameras hidden by default in DB mode
+      const initialVisibility = {};
+      camerasFromDB.forEach((cam) => {
+        initialVisibility[cam.id] = false;
+      });
+      setCameraVisibility(initialVisibility);
+    } catch (err) {
+      console.error("[DB Mode] ✗ Failed to fetch cameras:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addCamera = useMemo(
-    () => (cam) => {
-      setCameras((prev) => [
-        ...prev,
-        { id: cam.name || `cam-${Date.now()}`, ...cam },
-      ]);
+    () => async (cam) => {
+      if (USE_SEED_DATA) {
+        // Seed mode: just update local state
+        setCameras((prev) => {
+          const maxId = prev.length > 0 ? Math.max(...prev.map((c) => c.id)) : 0;
+          return [...prev, { id: maxId + 1, ...cam }];
+        });
+        console.log("[Seed Mode] Added camera locally:", cam.name);
+      } else {
+        // DB mode: save to database via API
+        try {
+          console.log("[DB Mode] Creating camera in database:", cam.name);
+          const createdCamera = await cameraApi.createCamera(cam);
+          console.log("[DB Mode] ✓ Camera created with ID:", createdCamera.id);
+
+          // Add to local state
+          setCameras((prev) => [...prev, createdCamera]);
+
+          // Initialize visibility for new camera
+          setCameraVisibility((prev) => ({
+            ...prev,
+            [createdCamera.id]: false,
+          }));
+        } catch (err) {
+          console.error("[DB Mode] ✗ Failed to create camera:");
+          console.error(err); // Log full error to console
+
+          // Throw user-friendly error message
+          const message = err.message?.includes("Unknown argument")
+            ? "Invalid camera data. Please check all fields."
+            : "Failed to save camera to database.";
+          throw new Error(message);
+        }
+      }
     },
     []
   );
@@ -240,6 +276,10 @@ export function CamerasProvider({ children }) {
       updateCameraStatus,
       toggleCameraVisibility,
       setCameraVisibilities,
+      loading,
+      error,
+      fetchCamerasFromDB,
+      mode: USE_SEED_DATA ? "seed" : "db",
     }),
     [
       camerasWithStatus,
@@ -247,6 +287,8 @@ export function CamerasProvider({ children }) {
       updateCameraStatus,
       toggleCameraVisibility,
       setCameraVisibilities,
+      loading,
+      error,
     ]
   );
 

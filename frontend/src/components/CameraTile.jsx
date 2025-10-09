@@ -84,10 +84,15 @@ export default function CameraTile({ cam }) {
 
       updateStatus("Connecting…");
       try {
-        if (cam.stream.type === "webrtc") {
+        if (cam.streamType === "WEBRTC") {
+          console.log(`[${cam.name}] 🔗 Connecting to WebRTC:`, {
+            webrtcBase: cam.webrtcBase,
+            streamName: cam.streamName,
+            fullUrl: `${cam.webrtcBase}/${cam.streamName}/whep`
+          });
           const { pc, stream } = await playWebRTC(
-            cam.stream.gatewayBase,
-            cam.stream.name
+            cam.webrtcBase,
+            cam.streamName
           );
           if (cancelled) {
             console.log(
@@ -204,21 +209,27 @@ export default function CameraTile({ cam }) {
               updateStatus(`Play error: ${e.message}`);
             }
           }
-        } else if (cam.stream.type === "hls") {
+        } else if (cam.streamType === "HLS") {
+          console.log(`[${cam.name}] 🔗 Connecting to HLS:`, {
+            hlsUrl: cam.hlsUrl
+          });
           if (Hls.isSupported()) {
             hls = new Hls({ liveDurationInfinity: true });
-            hls.loadSource(cam.stream.url);
+            hls.loadSource(cam.hlsUrl);
             hls.attachMedia(v);
             hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(() => {}));
           } else if (v.canPlayType("application/vnd.apple.mpegurl")) {
-            v.src = cam.stream.url;
+            v.src = cam.hlsUrl;
             await v.play().catch(() => {});
           } else {
-            v.src = cam.stream.fallback || "";
+            v.src = cam.hlsUrl || "";
             await v.play().catch(() => {});
           }
-        } else if (cam.stream.type === "mp4") {
-          v.src = cam.stream.url;
+        } else if (cam.streamType === "MP4") {
+          console.log(`[${cam.name}] 🔗 Connecting to MP4:`, {
+            url: cam.hlsUrl
+          });
+          v.src = cam.hlsUrl;
           await v.play().catch(() => {});
         }
         if (!cancelled) {
@@ -235,7 +246,7 @@ export default function CameraTile({ cam }) {
     // detection wiring
     async function startDetection() {
       if (cancelled) return;
-      if (cam.detection === "local") {
+      if (cam.detection === "LOCAL") {
         console.log(`[${cam.name}] Starting local detection...`);
         const VideoDetector = await loadVideoDetector();
         if (cancelled) return;
@@ -378,7 +389,7 @@ export default function CameraTile({ cam }) {
             startLoop();
           }
         }
-      } else if (cam.detection === "cloud") {
+      } else if (cam.detection === "CLOUD") {
         abortRef.current = startCloudDetect({
           video: v,
           endpoint: cam.awsEndpoint,
@@ -463,9 +474,9 @@ export default function CameraTile({ cam }) {
     };
   }, [
     cam.id,
-    cam.stream.type,
-    cam.stream.gatewayBase,
-    cam.stream.name,
+    cam.streamType,
+    cam.webrtcBase,
+    cam.streamName,
     cam.detection,
   ]);
 
