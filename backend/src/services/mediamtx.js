@@ -4,6 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import pino from "pino";
 import { cfg } from "../config.js";
+import { generateMediaMTXConfig } from "./mediamtxConfigGenerator.js";
 
 const log = pino({ name: "mediamtx" });
 const docker = new Docker(); // defaults to /var/run/docker.sock
@@ -17,13 +18,32 @@ const ICE_MIN = Number(process.env.MEDIAMTX_ICE_MIN || 8000);
 const ICE_MAX = Number(process.env.MEDIAMTX_ICE_MAX || 8100);
 
 export async function startMediaMTX() {
+  // STEP 1: Generate MediaMTX config from database
+  try {
+    log.info("Generating MediaMTX configuration from database...");
+    const result = await generateMediaMTXConfig();
+    log.info(
+      {
+        serverIP: result.serverIP,
+        camerasCount: result.camerasCount,
+      },
+      "MediaMTX config generated successfully"
+    );
+  } catch (error) {
+    log.warn(
+      { error: error.message },
+      "Failed to generate MediaMTX config, will use existing config if available"
+    );
+  }
+
+  // STEP 2: Resolve config path
   const rawPath = cfg.mediamtx?.config || "./mediamtx.yml";
   const configPath = path.isAbsolute(rawPath)
     ? rawPath
     : path.resolve(process.cwd(), rawPath);
   const haveConfig = fs.existsSync(configPath);
 
-  // If running already, return
+  // STEP 3: Check if container is already running
   const existing = await getExistingContainer();
   if (existing && (await isContainerRunning(existing))) {
     log.info("MediaMTX container is already running");

@@ -368,3 +368,244 @@ UI Polish:
 - Changed "Video" nav link to "Streams"
 - Changed "FireWatch" to "Fire Watch" (with space)
 - Added light theme variants for better theming support
+
+# mediamtx generation flow
+
+Proposed Architecture
+
+1. High-Level Flow
+
+Server Startup → Connect to DB → Generate mediamtx.yml →
+Start MediaMTX Container → Auto-start cloud detectors
+
+2. Core Components
+
+A. Config Generator Service
+(backend/src/services/mediamtxConfigGenerator.js)
+
+Responsibilities:
+
+- Query all cameras from database
+- Detect server's IP address dynamically
+- Build mediamtx.yml YAML structure
+- Write config file to disk
+
+Key Functions:
+
+- generateMediaMTXConfig(cameras) → writes mediamtx.yml
+- detectServerIP() → returns LAN IP for webrtcAdditionalHosts
+- buildCameraPath(camera) → generates path config per camera
+
+B. Camera Path Mapping Logic
+
+For each camera in DB, generate a path entry:
+
+Stream Name Rule: Use camera.name directly (e.g.,
+"Driveway_Cam" → /Driveway_Cam)
+
+Source URL Construction:
+
+- RTSP Cameras: rtsp://{username}:{password}@{ip}:{port}/live
+- HLS Direct: Use hlsUrl if provided
+- On-Demand (no source): For WEBRTC/HLS cameras that will be
+  pushed via ffmpeg/external source
+
+C. Dynamic IP Detection
+
+// Detect server's primary LAN IP
+function detectServerIP() {
+const interfaces = os.networkInterfaces();
+// Prioritize: Ethernet > WiFi > fallback to 127.0.0.1
+// Return first non-internal IPv4 address
+}
+
+3. Implementation Flow
+
+Step 1: Modify backend/src/services/mediamtx.js
+
+import { generateMediaMTXConfig } from
+'./mediamtxConfigGenerator.js';
+
+export async function startMediaMTX() {
+// STEP 1: Generate config from DB
+await generateMediaMTXConfig(); // <-- NEW
+
+    // STEP 2: Existing logic
+    const configPath = path.resolve(process.cwd(),
+
+'./mediamtx.yml');
+const haveConfig = fs.existsSync(configPath);
+
+    // STEP 3: Start container
+    // ... existing code
+
+}
+
+Step 2: Create Config Generator
+
+// backend/src/services/mediamtxConfigGenerator.js
+
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+import yaml from 'js-yaml';
+import { prisma } from '../db/prisma.js';
+
+export async function generateMediaMTXConfig() {
+// 1. Fetch all cameras from DB
+const cameras = await prisma.camera.findMany({
+where: { isActive: true } // Optional: only active
+cameras
+});
+
+    // 2. Detect server IP
+    const serverIP = detectServerIP();
+
+    // 3. Build config object
+    const config = {
+      logLevel: 'debug',
+      hls: true,
+      hlsAddress: ':8888',
+      hlsAllowOrigin: '*',
+      hlsVariant: 'lowLatency',
+      webrtc: true,
+      webrtcAddress: ':8889',
+      webrtcAllowOrigin: '*',
+      webrtcLocalUDPAddress: ':8189',
+      webrtcLocalTCPAddress: ':8189',
+      webrtcIPsFromInterfaces: false,
+      webrtcAdditionalHosts: [serverIP],
+      rtsp: true,
+      rtspAddress: ':8554',
+      paths: buildCameraPaths(cameras)
+    };
+
+    // 4. Write YAML
+    const yamlString = yaml.dump(config);
+    const configPath = path.resolve(process.cwd(),
+
+'mediamtx.yml');
+await fs.writeFile(configPath, yamlString, 'utf8');
+
+    return { serverIP, camerasCount: cameras.length };
+
+}
+
+function buildCameraPaths(cameras) {
+const paths = {};
+
+    for (const cam of cameras) {
+      const pathName = cam.name; // Use camera name directly
+
+      // Build source URL based on camera type
+      if (cam.streamType === 'RTSP' && cam.ip) {
+        const username = encodeURIComponent(cam.username ||
+
+'');
+const password = encodeURIComponent(cam.password ||
+'');
+const port = cam.port || '554';
+const streamPath = cam.streamName || '/live';
+
+        paths[pathName] = {
+          source: `rtsp://${username}:${password}@${cam.ip}:${p
+
+ort}${streamPath}`
+};
+} else if (cam.streamType === 'HLS' && cam.hlsUrl) {
+paths[pathName] = {
+source: cam.hlsUrl
+};
+} else {
+// On-demand publishing (no source)
+paths[pathName] = {};
+}
+}
+
+    return paths;
+
+}
+
+function detectServerIP() {
+const interfaces = os.networkInterfaces();
+
+    // Priority: eth0, en0, wlan0, etc.
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        // Skip internal and IPv6
+        if (!iface.internal && iface.family === 'IPv4') {
+          return iface.address;
+        }
+      }
+    }
+
+    return '127.0.0.1'; // Fallback
+
+}
+
+Step 3: Auto-Populate Camera Fields on Creation
+
+// backend/src/routes/cameras.js
+
+cameras.post("/", async (req, res) => {
+try {
+const userId = req.user.sub;
+const { serverIP } = await
+import('../services/mediamtxConfigGenerator.js')
+.then(m => ({ serverIP: m.detectServerIP() }));
+
+      const cam = await prisma.camera.create({
+        data: {
+          ...req.body,
+          userId,
+          streamName: req.body.name, // Auto-use camera name
+          webrtcBase: `http://${serverIP}:8889`, // Dynamic
+
+gateway
+},
+});
+res.json(cam);
+} catch (error) {
+res.status(400).json({ error: error.message });
+}
+});
+
+Step 4: Frontend Simplification
+
+Remove manual fields from AddCameraDialog.jsx:
+
+// Remove these from the form:
+
+- webrtcBase input (auto-generated by backend)
+- streamName input (uses camera name automatically)
+
+// Backend will auto-populate these fields based on:
+// - streamName = camera.name
+// - webrtcBase = detected server IP
+
+4. Database Schema Changes (Optional)
+
+You may want to add a field to track the server IP:
+
+model Camera {
+// ... existing fields
+serverIP String? // Track which server IP this camera is
+configured for
+}
+
+5. Handling New Cameras (Post-Startup)
+
+Current Limitation: MediaMTX config is static at startup.
+
+Workaround for now:
+
+1. New cameras added to DB after startup won't have MediaMTX
+   paths
+2. Options:
+
+
+    - Option A: Require server restart (simple, matches your
+
+requirement) - Option B: Add a manual "Reload MediaMTX Config" endpoint
+that regenerates and restarts container - Option C (future): Use MediaMTX API to dynamically add
+paths

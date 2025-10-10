@@ -5,6 +5,7 @@ import {
   stopCloudDetector,
   getRunningDetectors,
 } from "../services/cloudDetector.js";
+import { detectServerIP, sanitizePathName } from "../services/mediamtxConfigGenerator.js";
 
 export const cameras = Router();
 
@@ -12,12 +13,23 @@ export const cameras = Router();
 cameras.post("/", async (req, res) => {
   try {
     const userId = req.user.sub;
+
+    // Auto-populate streamName and webrtcBase if not provided
+    const serverIP = detectServerIP();
+
+    const cameraData = {
+      ...req.body,
+      userId,
+      // Auto-populate streamName if not provided
+      streamName: req.body.streamName || sanitizePathName(req.body.name),
+      // Auto-populate webrtcBase if not provided
+      webrtcBase: req.body.webrtcBase || `http://${serverIP}:8889`,
+    };
+
     const cam = await prisma.camera.create({
-      data: {
-        ...req.body,
-        userId,
-      },
+      data: cameraData,
     });
+
     res.json(cam);
   } catch (error) {
     res.status(400).json({ error: error.message });

@@ -16,7 +16,7 @@ model Camera {
   port       String?  // Port number (e.g., "554")
   username   String?  // RTSP/camera auth username
   password   String?  // RTSP/camera auth password (should encrypt in production)
-  detection  String   @default("LOCAL")
+  detection  String   @default("CLOUD")
   streamType String   @default("WEBRTC") // "WEBRTC", "HLS", or "RTSP"
   streamName String?  // Stream path (e.g., "/h264Preview_01_main" for RTSP)
   hlsUrl     String?  // Direct HLS URL if not using RTSP
