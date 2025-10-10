@@ -12,6 +12,7 @@ export default function AddCameraDialog({ onClose }) {
     password: "",
     detection: "LOCAL",
     streamType: "WEBRTC",
+    streamPath: "/live",
     hlsUrl: "",
     // webrtcBase and streamName are now auto-populated by the backend
     // webrtcBase:
@@ -38,6 +39,7 @@ export default function AddCameraDialog({ onClose }) {
         password: form.password,
         detection: form.detection,
         streamType: form.streamType,
+        streamPath: form.streamPath,
         hlsUrl: form.hlsUrl,
         // streamName and webrtcBase are now auto-populated by the backend
         // Note: awsEndpoint and cloudFps are NOT in the database schema
@@ -85,6 +87,17 @@ export default function AddCameraDialog({ onClose }) {
             onChange={(e) => onChange("port", e.target.value)}
             placeholder="8554"
           />
+        </div>
+        <div className="row">
+          <label>Stream Path</label>
+          <input
+            value={form.streamPath}
+            onChange={(e) => onChange("streamPath", e.target.value)}
+            placeholder="/live"
+          />
+          <small style={{ color: "#888", marginTop: "4px", fontSize: "12px" }}>
+            RTSP stream path (e.g., /live, /h264Preview_01_main)
+          </small>
         </div>
         <div className="row two">
           <div>

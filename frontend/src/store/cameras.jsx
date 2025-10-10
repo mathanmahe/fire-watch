@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import { cameraApi } from "../services/cameraApi.js";
 
 // Mode detection: true = use seed data, false = fetch from DB
@@ -16,7 +22,8 @@ const seed = [
     detection: "LOCAL",
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-    streamName: "cam1",
+    streamName: "cam-1",
+    streamPath: "/live",
   },
   {
     id: 2,
@@ -27,7 +34,8 @@ const seed = [
     detection: "LOCAL",
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
-    streamName: "cam2",
+    streamName: "cam-2",
+    streamPath: "/live",
   },
   {
     id: 3,
@@ -39,6 +47,7 @@ const seed = [
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
     streamName: "cam3",
+    streamPath: "/live",
   },
   {
     id: 4,
@@ -50,6 +59,7 @@ const seed = [
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
     streamName: "cam4",
+    streamPath: "/live",
   },
   {
     id: 5,
@@ -61,6 +71,7 @@ const seed = [
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
     streamName: "cam5",
+    streamPath: "/live",
   },
 
   // local detection for testing (cameras 6-7)
@@ -74,6 +85,7 @@ const seed = [
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
     streamName: "cam6",
+    streamPath: "/live",
   },
   {
     id: 7,
@@ -85,6 +97,7 @@ const seed = [
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
     streamName: "cam7",
+    streamPath: "/live",
   },
   {
     id: 8,
@@ -96,6 +109,7 @@ const seed = [
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
     streamName: "cam8",
+    streamPath: "/live",
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
     cloudFps: 2,
   },
@@ -109,6 +123,7 @@ const seed = [
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
     streamName: "cam9",
+    streamPath: "/live",
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
     cloudFps: 2,
   },
@@ -122,6 +137,7 @@ const seed = [
     streamType: "WEBRTC",
     webrtcBase: import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE,
     streamName: "cam10",
+    streamPath: "/live",
     awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
     cloudFps: 2,
   },
@@ -170,7 +186,9 @@ export function CamerasProvider({ children }) {
     console.log("[DB Mode] Loading cameras from database...");
     try {
       const camerasFromDB = await cameraApi.getCameras();
-      console.log(`[DB Mode] ✓ Fetched ${camerasFromDB.length} cameras from database`);
+      console.log(
+        `[DB Mode] ✓ Fetched ${camerasFromDB.length} cameras from database`
+      );
       setCameras(camerasFromDB);
 
       // Initialize visibility: all cameras hidden by default in DB mode
@@ -192,7 +210,8 @@ export function CamerasProvider({ children }) {
       if (USE_SEED_DATA) {
         // Seed mode: just update local state
         setCameras((prev) => {
-          const maxId = prev.length > 0 ? Math.max(...prev.map((c) => c.id)) : 0;
+          const maxId =
+            prev.length > 0 ? Math.max(...prev.map((c) => c.id)) : 0;
           return [...prev, { id: maxId + 1, ...cam }];
         });
         console.log("[Seed Mode] Added camera locally:", cam.name);

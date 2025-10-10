@@ -1571,7 +1571,7 @@ body {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
   box-shadow: var(--shadow-1);
 }
@@ -1585,6 +1585,8 @@ body {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+  overflow: visible;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 /* Dark theme status panel header */
@@ -1819,6 +1821,7 @@ body {
 .status-table-wrapper {
   overflow: auto;
   padding: 0 12px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 /* No results empty state */
