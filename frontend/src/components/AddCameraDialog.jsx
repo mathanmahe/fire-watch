@@ -13,9 +13,10 @@ export default function AddCameraDialog({ onClose }) {
     detection: "LOCAL",
     streamType: "WEBRTC",
     hlsUrl: "",
-    webrtcBase:
-      import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE || "http://127.0.0.1:8889",
-    streamName: "camX",
+    // webrtcBase and streamName are now auto-populated by the backend
+    // webrtcBase:
+    //   import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE || "http://127.0.0.1:8889",
+    // streamName: "camX",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -37,9 +38,8 @@ export default function AddCameraDialog({ onClose }) {
         password: form.password,
         detection: form.detection,
         streamType: form.streamType,
-        streamName: form.streamName,
         hlsUrl: form.hlsUrl,
-        webrtcBase: form.webrtcBase,
+        // streamName and webrtcBase are now auto-populated by the backend
         // Note: awsEndpoint and cloudFps are NOT in the database schema
         // They are only used in seed mode for local testing
       });
@@ -138,7 +138,8 @@ export default function AddCameraDialog({ onClose }) {
           </div>
         )} */}
 
-        {form.streamType === "WEBRTC" && (
+        {/* WebRTC fields are now auto-populated by the backend */}
+        {/* {form.streamType === "WEBRTC" && (
           <>
             <div className="row">
               <label>Gateway Base</label>
@@ -155,7 +156,7 @@ export default function AddCameraDialog({ onClose }) {
               />
             </div>
           </>
-        )}
+        )} */}
 
         {error && (
           <div style={{ color: "red", marginTop: "10px" }}>Error: {error}</div>
