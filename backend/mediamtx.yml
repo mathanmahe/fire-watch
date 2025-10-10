@@ -1,50 +1,26 @@
-# mediamtx.yml (Docker / v1.14.x) — RTSP pull, HLS+WebRTC out
 logLevel: debug
-
-# HLS server
-hls: yes
-hlsAddress: :8888
-hlsAllowOrigin: "*"
-hlsVariant: lowLatency # optional but nice for low latency
-
-# WebRTC server (WHEP/WHIP)
-webrtc: yes
-webrtcAddress: :8889
-webrtcAllowOrigin: "*"
-
-webrtcLocalUDPAddress: :8189
-webrtcLocalTCPAddress: :8189
-
-# Advertise correct IPs to clients (LAN):
-webrtcIPsFromInterfaces: no
-# Explicit IPs for WebRTC (replace with actual deployment IPs)
-# Only advertise the IP that browsers can actually reach
-webrtcAdditionalHosts: ["10.0.0.160"]
-
-# (Optional) RTSP server if you also need to accept RTSP publishers
-rtsp: yes
-rtspAddress: :8554
-
+hls: true
+hlsAddress: ':8888'
+hlsAllowOrigin: '*'
+hlsVariant: lowLatency
+webrtc: true
+webrtcAddress: ':8889'
+webrtcAllowOrigin: '*'
+webrtcLocalUDPAddress: ':8189'
+webrtcLocalTCPAddress: ':8189'
+webrtcIPsFromInterfaces: false
+webrtcAdditionalHosts:
+  - 10.0.0.160
+rtsp: true
+rtspAddress: ':8554'
 paths:
-  # Real RTSP cameras
-  cam1:
+  cctv_front_door:
+    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
+  test_fire_video:
+    source: https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4
+  cam-1:
     source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
-
-  cam2:
+  cam-2:
     source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
-
-  # Sample video streams (pushed via ffmpeg script)
-  cam3:
-    # No source = on-demand publishing from ffmpeg
-
-  cam4:
-    # No source = on-demand publishing from ffmpeg
-
-  cam5:
-    # No source = on-demand publishing from ffmpeg
-
-  cam6:
-    # No source = on-demand publishing from ffmpeg
-
-  cam7:
-    # No source = on-demand publishing from ffmpeg
+  cam-3:
+    source: rtsp://admin:CCTVCheck%40123!@10.0.0.123:8554/live

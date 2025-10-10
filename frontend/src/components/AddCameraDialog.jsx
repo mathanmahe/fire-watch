@@ -10,38 +10,48 @@ export default function AddCameraDialog({ onClose }) {
     port: "",
     username: "",
     password: "",
-    detection: "local",
-    streamType: "hls",
+    detection: "LOCAL",
+    streamType: "WEBRTC",
+    streamPath: "/live",
     hlsUrl: "",
-    webrtcGateway:
-      import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE || "http://127.0.0.1:8889",
-    webrtcName: "camX",
+    // webrtcBase and streamName are now auto-populated by the backend
+    // webrtcBase:
+    //   import.meta.env.VITE_MEDIAMTX_GATEWAY_BASE || "http://127.0.0.1:8889",
+    // streamName: "camX",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const onChange = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
-    const stream =
-      form.streamType === "webrtc"
-        ? {
-            type: "webrtc",
-            gatewayBase: form.webrtcGateway,
-            name: form.webrtcName,
-          }
-        : { type: "hls", url: form.hlsUrl };
-    addCamera({
-      name: form.name || `cam-${Date.now()}`,
-      location: form.location,
-      ip: form.ip,
-      port: form.port,
-      username: form.username,
-      password: form.password,
-      detection: form.detection,
-      stream,
-      awsEndpoint: import.meta.env.VITE_AWS_FIRE_ENDPOINT,
-    });
-    onClose();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await addCamera({
+        name: form.name || `cam-${Date.now()}`,
+        location: form.location,
+        ip: form.ip,
+        port: form.port,
+        username: form.username,
+        password: form.password,
+        detection: form.detection,
+        streamType: form.streamType,
+        streamPath: form.streamPath,
+        hlsUrl: form.hlsUrl,
+        // streamName and webrtcBase are now auto-populated by the backend
+        // Note: awsEndpoint and cloudFps are NOT in the database schema
+        // They are only used in seed mode for local testing
+      });
+      onClose();
+    } catch (err) {
+      // Show user-friendly error message
+      console.error("Failed to add camera:", err);
+      setError("Failed to add camera. Please check the console for details.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -77,6 +87,17 @@ export default function AddCameraDialog({ onClose }) {
             onChange={(e) => onChange("port", e.target.value)}
             placeholder="8554"
           />
+        </div>
+        <div className="row">
+          <label>Stream Path</label>
+          <input
+            value={form.streamPath}
+            onChange={(e) => onChange("streamPath", e.target.value)}
+            placeholder="/live"
+          />
+          <small style={{ color: "#888", marginTop: "4px", fontSize: "12px" }}>
+            RTSP stream path (e.g., /live, /h264Preview_01_main)
+          </small>
         </div>
         <div className="row two">
           <div>
@@ -130,30 +151,37 @@ export default function AddCameraDialog({ onClose }) {
           </div>
         )} */}
 
-        {form.streamType === "webrtc" && (
+        {/* WebRTC fields are now auto-populated by the backend */}
+        {/* {form.streamType === "WEBRTC" && (
           <>
             <div className="row">
               <label>Gateway Base</label>
               <input
-                value={form.webrtcGateway}
-                onChange={(e) => onChange("webrtcGateway", e.target.value)}
+                value={form.webrtcBase}
+                onChange={(e) => onChange("webrtcBase", e.target.value)}
               />
             </div>
             <div className="row">
               <label>Path/Name</label>
               <input
-                value={form.webrtcName}
-                onChange={(e) => onChange("webrtcName", e.target.value)}
+                value={form.streamName}
+                onChange={(e) => onChange("streamName", e.target.value)}
               />
             </div>
           </>
+        )} */}
+
+        {error && (
+          <div style={{ color: "red", marginTop: "10px" }}>Error: {error}</div>
         )}
 
         <div className="actions">
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} disabled={submitting}>
             Cancel
           </button>
-          <button type="submit">Add</button>
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Adding..." : "Add"}
+          </button>
         </div>
       </form>
     </div>

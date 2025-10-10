@@ -1,6 +1,14 @@
 import { Router } from "express";
 import { prisma } from "../db/prisma.js";
-import { startCloudDetector, stopCloudDetector, getRunningDetectors } from "../services/cloudDetector.js";
+import {
+  startCloudDetector,
+  stopCloudDetector,
+  getRunningDetectors,
+} from "../services/cloudDetector.js";
+import {
+  detectServerIP,
+  sanitizePathName,
+} from "../services/mediamtxConfigGenerator.js";
 
 export const cameras = Router();
 
@@ -8,12 +16,25 @@ export const cameras = Router();
 cameras.post("/", async (req, res) => {
   try {
     const userId = req.user.sub;
-    const cam = await prisma.camera.create({ 
-      data: { 
-        ...req.body, 
-        userId 
-      } 
+
+    // Auto-populate streamName and webrtcBase if not provided
+    const serverIP = detectServerIP();
+
+    const cameraData = {
+      ...req.body,
+      userId,
+      // Auto-populate streamName if not provided (for WebRTC endpoint)
+      streamName: req.body.streamName || sanitizePathName(req.body.name),
+      // Use provided streamPath or default to "/live" (for RTSP stream path)
+      streamPath: req.body.streamPath || "/live",
+      // Auto-populate webrtcBase if not provided
+      webrtcBase: req.body.webrtcBase || `http://${serverIP}:8889`,
+    };
+
+    const cam = await prisma.camera.create({
+      data: cameraData,
     });
+
     res.json(cam);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -24,9 +45,9 @@ cameras.post("/", async (req, res) => {
 cameras.get("/", async (req, res) => {
   try {
     const userId = req.user.sub;
-    const list = await prisma.camera.findMany({ 
+    const list = await prisma.camera.findMany({
       where: { userId },
-      orderBy: { id: "asc" } 
+      orderBy: { id: "asc" },
     });
     res.json(list);
   } catch (error) {
@@ -39,22 +60,21 @@ cameras.get("/", async (req, res) => {
 cameras.get("/detection-status", async (req, res) => {
   try {
     const userId = req.user.sub;
-    const cameraList = await prisma.camera.findMany({ 
+    const cameraList = await prisma.camera.findMany({
       where: { userId },
-      orderBy: { id: "asc" } 
+      orderBy: { id: "asc" },
     });
-    
+
     const running = getRunningDetectors();
-    
-    const status = cameraList.map(cam => ({
+
+    const status = cameraList.map((cam) => ({
       id: cam.id,
-      name: cam.camera,
+      name: cam.name,
       location: cam.location,
-      isRunning: running.has(cam.id)
+      isRunning: running.has(cam.id),
     }));
-    
+
     res.json(status);
-    
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -64,21 +84,23 @@ cameras.get("/detection-status", async (req, res) => {
 cameras.get("/status/all", async (req, res) => {
   try {
     const userId = req.user.sub;
-    const cams = await prisma.camera.findMany({ 
+    const cams = await prisma.camera.findMany({
       where: { userId },
-      orderBy: { id: "asc" } 
+      orderBy: { id: "asc" },
     });
-    
+
     const running = getRunningDetectors();
-    
-    res.json(cams.map(c => ({
-      id: c.id,
-      name: c.camera,
-      location: c.location,
-      isStreaming: running.has(c.id),
-      isFire: false,
-      isView: c.isActive
-    })));
+
+    res.json(
+      cams.map((c) => ({
+        id: c.id,
+        name: c.name,
+        location: c.location,
+        isStreaming: running.has(c.id),
+        isFire: false,
+        isView: c.isActive,
+      }))
+    );
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -89,40 +111,41 @@ cameras.post("/start-detection", async (req, res) => {
   try {
     const userId = req.user.sub;
     const { cameraIds } = req.body;
-    
+
     if (!Array.isArray(cameraIds) || cameraIds.length === 0) {
-      return res.status(400).json({ error: "cameraIds must be a non-empty array" });
+      return res
+        .status(400)
+        .json({ error: "cameraIds must be a non-empty array" });
     }
-    
+
     const cameraList = await prisma.camera.findMany({
       where: {
         id: { in: cameraIds },
-        userId: userId
-      }
+        userId: userId,
+      },
     });
-    
+
     if (cameraList.length === 0) {
       return res.status(404).json({ error: "No cameras found" });
     }
-    
+
     const started = [];
     const failed = [];
-    
+
     for (const cam of cameraList) {
       try {
         startCloudDetector(cam);
-        started.push({ id: cam.id, name: cam.camera });
+        started.push({ id: cam.id, name: cam.name });
       } catch (error) {
-        failed.push({ id: cam.id, name: cam.camera, error: error.message });
+        failed.push({ id: cam.id, name: cam.name, error: error.message });
       }
     }
-    
-    res.json({ 
+
+    res.json({
       started,
       failed,
-      message: `Started detection for ${started.length} camera(s)`
+      message: `Started detection for ${started.length} camera(s)`,
     });
-    
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -133,30 +156,31 @@ cameras.post("/stop-detection", async (req, res) => {
   try {
     const userId = req.user.sub;
     const { cameraIds } = req.body;
-    
+
     if (!Array.isArray(cameraIds) || cameraIds.length === 0) {
-      return res.status(400).json({ error: "cameraIds must be a non-empty array" });
+      return res
+        .status(400)
+        .json({ error: "cameraIds must be a non-empty array" });
     }
-    
+
     const cameraList = await prisma.camera.findMany({
       where: {
         id: { in: cameraIds },
-        userId: userId
-      }
+        userId: userId,
+      },
     });
-    
+
     const stopped = [];
-    
+
     for (const cam of cameraList) {
       stopCloudDetector(cam.id);
-      stopped.push({ id: cam.id, name: cam.camera });
+      stopped.push({ id: cam.id, name: cam.name });
     }
-    
-    res.json({ 
+
+    res.json({
       stopped,
-      message: `Stopped detection for ${stopped.length} camera(s)`
+      message: `Stopped detection for ${stopped.length} camera(s)`,
     });
-    
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -168,15 +192,15 @@ cameras.get("/:id", async (req, res) => {
   try {
     const userId = req.user.sub;
     const id = Number(req.params.id);
-    
-    const cam = await prisma.camera.findFirst({ 
-      where: { id, userId } 
+
+    const cam = await prisma.camera.findFirst({
+      where: { id, userId },
     });
-    
+
     if (!cam) {
       return res.status(404).json({ error: "Camera not found" });
     }
-    
+
     res.json(cam);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -188,20 +212,20 @@ cameras.put("/:id", async (req, res) => {
   try {
     const userId = req.user.sub;
     const id = Number(req.params.id);
-    
-    const existing = await prisma.camera.findFirst({ 
-      where: { id, userId } 
+
+    const existing = await prisma.camera.findFirst({
+      where: { id, userId },
     });
-    
+
     if (!existing) {
       return res.status(404).json({ error: "Camera not found" });
     }
-    
-    const cam = await prisma.camera.update({ 
-      where: { id }, 
-      data: req.body 
+
+    const cam = await prisma.camera.update({
+      where: { id },
+      data: req.body,
     });
-    
+
     res.json(cam);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -213,18 +237,18 @@ cameras.delete("/:id", async (req, res) => {
   try {
     const userId = req.user.sub;
     const id = Number(req.params.id);
-    
-    const existing = await prisma.camera.findFirst({ 
-      where: { id, userId } 
+
+    const existing = await prisma.camera.findFirst({
+      where: { id, userId },
     });
-    
+
     if (!existing) {
       return res.status(404).json({ error: "Camera not found" });
     }
-    
+
     stopCloudDetector(id);
     await prisma.camera.delete({ where: { id } });
-    
+
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -236,26 +260,26 @@ cameras.post("/:id/detections", async (req, res) => {
   try {
     const userId = req.user.sub;
     const id = Number(req.params.id);
-    
-    const cam = await prisma.camera.findFirst({ 
-      where: { id, userId } 
+
+    const cam = await prisma.camera.findFirst({
+      where: { id, userId },
     });
-    
+
     if (!cam) {
       return res.status(404).json({ error: "Camera not found" });
     }
-    
+
     const { isFire, score, boxesJson, ts } = req.body;
     const det = await prisma.detection.create({
-      data: { 
-        cameraId: id, 
-        isFire: !!isFire, 
-        score, 
-        boxesJson, 
-        ts: ts ? new Date(ts) : undefined 
-      }
+      data: {
+        cameraId: id,
+        isFire: !!isFire,
+        score,
+        boxesJson,
+        ts: ts ? new Date(ts) : undefined,
+      },
     });
-    
+
     res.json(det);
   } catch (error) {
     res.status(400).json({ error: error.message });
