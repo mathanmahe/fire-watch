@@ -76,6 +76,9 @@ async function addCamera(userId) {
   const port = await question("Camera Port (e.g., 554): ");
   const username = await question("Username: ");
   const password = await question("Password: ");
+  const streamPath = await question(
+    "Stream Path (e.g., /live, /h264Preview_01_main): "
+  );
 
   console.log("\nSaving camera...");
 
@@ -90,7 +93,7 @@ async function addCamera(userId) {
         username: username,
         password: password,
         streamType: "RTSP",
-        streamName: "/h264Preview_01_main",
+        streamPath: streamPath || "/live",
         detection: "CLOUD",
         isActive: true,
       },

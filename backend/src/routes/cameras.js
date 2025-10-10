@@ -5,7 +5,10 @@ import {
   stopCloudDetector,
   getRunningDetectors,
 } from "../services/cloudDetector.js";
-import { detectServerIP, sanitizePathName } from "../services/mediamtxConfigGenerator.js";
+import {
+  detectServerIP,
+  sanitizePathName,
+} from "../services/mediamtxConfigGenerator.js";
 
 export const cameras = Router();
 
@@ -20,8 +23,10 @@ cameras.post("/", async (req, res) => {
     const cameraData = {
       ...req.body,
       userId,
-      // Auto-populate streamName if not provided
+      // Auto-populate streamName if not provided (for WebRTC endpoint)
       streamName: req.body.streamName || sanitizePathName(req.body.name),
+      // Use provided streamPath or default to "/live" (for RTSP stream path)
+      streamPath: req.body.streamPath || "/live",
       // Auto-populate webrtcBase if not provided
       webrtcBase: req.body.webrtcBase || `http://${serverIP}:8889`,
     };

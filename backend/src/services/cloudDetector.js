@@ -22,7 +22,7 @@ function inputUrlFromCamera(cam) {
         : "";
     // Construct address with optional port
     const address = cam.port ? `${cam.ip}:${cam.port}` : cam.ip;
-    const path = cam.streamName || "/h264Preview_01_main";
+    const path = cam.streamPath || "/live";
 
     const url = `${protocol}${auth}${address}${path}`;
     log.info(

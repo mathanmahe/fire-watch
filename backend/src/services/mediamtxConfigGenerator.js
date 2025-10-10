@@ -35,8 +35,10 @@ export async function generateMediaMTXConfig() {
       indent: 2,
       lineWidth: -1, // Disable line wrapping
       noRefs: true,
-      quotingType: '"', // Use double quotes for strings
-      forceQuotes: false, // Only quote when necessary
+      styles: {
+        '!!bool': 'lowercase', // Output booleans as yes/no
+      },
+      sortKeys: false, // Keep original order
     });
 
     const configPath = path.resolve(process.cwd(), "mediamtx.yml");
@@ -66,24 +68,24 @@ function buildMediaMTXConfig(cameras, serverIP) {
     logLevel: "debug",
 
     // HLS server configuration
-    hls: "yes",
+    hls: true,
     hlsAddress: ":8888",
     hlsAllowOrigin: "*",
     hlsVariant: "lowLatency",
 
     // WebRTC server configuration
-    webrtc: "yes",
+    webrtc: true,
     webrtcAddress: ":8889",
     webrtcAllowOrigin: "*",
     webrtcLocalUDPAddress: ":8189",
     webrtcLocalTCPAddress: ":8189",
 
     // Advertise correct IPs to clients (LAN)
-    webrtcIPsFromInterfaces: "no",
+    webrtcIPsFromInterfaces: false,
     webrtcAdditionalHosts: [serverIP],
 
     // RTSP server configuration
-    rtsp: "yes",
+    rtsp: true,
     rtspAddress: ":8554",
 
     // Camera paths
@@ -149,7 +151,7 @@ function buildRTSPUrl(cam) {
   const username = encodeURIComponent(cam.username || "");
   const password = encodeURIComponent(cam.password || "");
   const port = cam.port || "554";
-  let streamPath = cam.streamName || "/live";
+  let streamPath = cam.streamPath || "/live";
 
   // Ensure streamPath starts with /
   if (streamPath && !streamPath.startsWith("/")) {
@@ -237,11 +239,15 @@ export async function updateCameraStreamFields(cameraId) {
     throw new Error(`Camera with ID ${cameraId} not found`);
   }
 
-  // Auto-populate streamName and webrtcBase if not already set
+  // Auto-populate streamName, streamPath, and webrtcBase if not already set
   const updates = {};
 
   if (!camera.streamName) {
     updates.streamName = sanitizePathName(camera.name);
+  }
+
+  if (!camera.streamPath) {
+    updates.streamPath = "/live";
   }
 
   if (!camera.webrtcBase) {

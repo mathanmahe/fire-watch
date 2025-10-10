@@ -18,7 +18,8 @@ model Camera {
   password   String?  // RTSP/camera auth password (should encrypt in production)
   detection  String   @default("CLOUD")
   streamType String   @default("WEBRTC") // "WEBRTC", "HLS", or "RTSP"
-  streamName String?  // Stream path (e.g., "/h264Preview_01_main" for RTSP)
+  streamName String?  // WebRTC endpoint name (derived from camera name)
+  streamPath String?  // RTSP stream path (e.g., "/live", "/h264Preview_01_main")
   hlsUrl     String?  // Direct HLS URL if not using RTSP
   webrtcBase String?  // WebRTC base URL
   isActive   Boolean  @default(true)
