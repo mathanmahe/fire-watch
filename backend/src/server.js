@@ -1,5 +1,6 @@
 import express from "express";
-import http from "node:http";
+import { WebSocketServer } from "ws";
+import { createServer } from "http";
 import cors from "cors";
 import pino from "pino";
 import { cfg } from "./config.js";
@@ -11,11 +12,102 @@ import {
   isMediaMTXRunning,
 } from "./services/mediamtx.js";
 import { cameras as camerasRouter } from "./routes/cameras.js";
+import { CognitoJwtVerifier } from "aws-jwt-verify";
+import { startCloudDetector, setBroadcastFunction } from "./services/cloudDetector.js";
 
 const log = pino({ name: "server" });
 const app = express();
+const httpServer = createServer(app);
 
-// CORS configuration for browser access
+// -------------------------------------------------------------------
+// 🧠 WebSocket setup with JWT authentication
+// -------------------------------------------------------------------
+const wss = new WebSocketServer({ server: httpServer });
+const wsClients = new Map(); // userId -> Set<WebSocket>
+
+const verifier = CognitoJwtVerifier.create({
+  userPoolId: cfg.cognito.poolId,
+  tokenUse: "id",
+  clientId: cfg.cognito.clientId,
+});
+
+wss.on("connection", async (ws, req) => {
+  log.info("🔗 WebSocket connection attempt");
+
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const token = url.searchParams.get("token");
+
+  if (!token) {
+    ws.close(4001, "Missing token");
+    log.warn("WebSocket rejected: missing token");
+    return;
+  }
+
+  try {
+    const payload = await verifier.verify(token);
+    const userId = payload.sub;
+
+    if (!wsClients.has(userId)) wsClients.set(userId, new Set());
+    wsClients.get(userId).add(ws);
+    log.info({ userId, email: payload.email }, "✅ WebSocket authenticated");
+
+    ws.send(
+      JSON.stringify({ type: "connected", message: "WebSocket connected" })
+    );
+
+    ws.on("close", () => {
+      const clients = wsClients.get(userId);
+      if (clients) {
+        clients.delete(ws);
+        if (clients.size === 0) wsClients.delete(userId);
+      }
+      log.info({ userId }, "❌ WebSocket disconnected");
+    });
+  } catch (error) {
+    ws.close(4002, "Invalid token");
+    log.warn({ error: error.message }, "❌ WebSocket authentication failed");
+  }
+});
+
+// -------------------------------------------------------------------
+// 🔥 Broadcast helper for fire detection
+// -------------------------------------------------------------------
+export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
+  log.info({ userId, cameraId, cameraName, isFire, totalUsers: wsClients.size }, "🔥 broadcastFireDetection called");
+
+  const clients = wsClients.get(userId);
+
+  if (!clients || clients.size === 0) {
+    log.warn({ userId, cameraId, availableUsers: Array.from(wsClients.keys()) }, "⚠️ No WebSocket clients found for userId");
+    return;
+  }
+
+  const payload = JSON.stringify({
+    type: "fire-detection",
+    cameraId,
+    cameraName,
+    isFire,
+    timestamp: new Date().toISOString(),
+  });
+
+  log.info({ userId, cameraId, clientCount: clients.size, payload }, "📡 Sending to WebSocket clients");
+
+  let sentCount = 0;
+  for (const client of clients) {
+    if (client.readyState === 1) {
+      client.send(payload);
+      sentCount++;
+    } else {
+      log.warn({ userId, cameraId, readyState: client.readyState }, "⚠️ Client not in OPEN state");
+    }
+  }
+
+  log.info({ userId, cameraId, isFire, sentCount }, "📢 Fire detection broadcasted");
+}
+
+// -------------------------------------------------------------------
+// 🌐 Express configuration
+// -------------------------------------------------------------------
 app.use(
   cors({
     origin: true,
@@ -23,71 +115,75 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 app.use(express.json({ limit: "5mb" }));
 
-// MediaMTX HTTP health probe utility
-async function probeMtxHttp() {
-  return new Promise((resolve) => {
-    const req = http.request(
-      { host: "127.0.0.1", port: 8888, method: "HEAD", path: "/" },
-      (res) => {
-        res.resume();
-        resolve(true);
-      }
-    );
-    req.on("error", () => resolve(false));
-    req.end();
-  });
-}
-
 app.get("/healthz", async (_req, res) => {
-  res.json({ ok: true, mediamtx: await probeMtxHttp() });
+  res.json({ ok: true, mediamtx: await isMediaMTXRunning() });
 });
 
 app.use("/api", requireAuth);
 app.use("/api/cameras", camerasRouter);
 
-
+// -------------------------------------------------------------------
+// 🚀 Main Entrypoint with auto-start detection
+// -------------------------------------------------------------------
 async function main() {
   await prisma.$connect();
 
-  // Start MediaMtx Docker container
+  // Step 0: Register WebSocket broadcast function with cloud detector
+  setBroadcastFunction(broadcastFireDetection);
+  log.info("🔌 WebSocket broadcast function registered with cloud detector");
+
+  // Step 1: Start MediaMTX
   try {
-    log.info("Starting MediaMtx Docker container...");
+    log.info("Starting MediaMTX...");
     await startMediaMTX();
-    log.info("MediaMtx Docker container started successfully");
-  } catch (e) {
-    log.error({ error: e.message }, "Failed to start MediaMtx container");
-    // Continue anyway - container might already be running externally
+    log.info("MediaMTX started successfully");
+  } catch (err) {
+    log.error({ error: err.message }, "Failed to start MediaMTX");
   }
 
-  app.listen(cfg.port, () => log.info(`API listening on :${cfg.port}`));
+  // Step 2: Start Fire Detection Automatically for all active cameras
+  try {
+    const activeCameras = await prisma.camera.findMany({
+      where: { isActive: true },
+      orderBy: { id: "asc" },
+    });
+
+    if (activeCameras.length === 0) {
+      log.warn("⚠️ No active cameras found in database.");
+    } else {
+      log.info(
+        `🎥 Starting fire detection for ${activeCameras.length} cameras...`
+      );
+      for (const cam of activeCameras) {
+        startCloudDetector(cam);
+        log.info({ id: cam.id, name: cam.name }, "🔥 Fire detection started");
+      }
+    }
+  } catch (error) {
+    log.error({ error: error.message }, "Failed to start fire detection");
+  }
+
+  // Step 3: Launch HTTP + WebSocket server
+  httpServer.listen(cfg.port, () =>
+    log.info(`🚀 API & WebSocket listening on port ${cfg.port}`)
+  );
 }
 
-// Graceful shutdown handling
+// Graceful shutdown handlers
 process.on("SIGTERM", async () => {
-  log.info("SIGTERM received, shutting down gracefully...");
-  try {
-    await stopMediaMTX();
-    await prisma.$disconnect();
-    process.exit(0);
-  } catch (error) {
-    log.error({ error }, "Error during shutdown");
-    process.exit(1);
-  }
+  log.info("SIGTERM received, shutting down...");
+  await stopMediaMTX();
+  await prisma.$disconnect();
+  process.exit(0);
 });
 
 process.on("SIGINT", async () => {
-  log.info("SIGINT received, shutting down gracefully...");
-  try {
-    await stopMediaMTX();
-    await prisma.$disconnect();
-    process.exit(0);
-  } catch (error) {
-    log.error({ error }, "Error during shutdown");
-    process.exit(1);
-  }
+  log.info("SIGINT received, shutting down...");
+  await stopMediaMTX();
+  await prisma.$disconnect();
+  process.exit(0);
 });
 
 main().catch((e) => {

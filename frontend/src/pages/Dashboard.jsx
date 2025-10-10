@@ -8,8 +8,8 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { useCameras } from "../store/cameras.jsx";
 import { toggleTheme } from "../utils/theme.js";
 import { CSSTransition } from "react-transition-group";
-// add below imports
 import { withCamerasProvider } from "../store/cameras.jsx";
+import { useWebSocket } from "../hooks/useWebSocket.js";
 
 function Dashboard() {
   const { logout } = useAuth();
@@ -26,6 +26,9 @@ function Dashboard() {
   );
   const { cameras, toggleCameraVisibility } = useCameras();
   const statusPanelRef = React.useRef(null);
+
+  // Initialize WebSocket connection for fire detection alerts
+  useWebSocket();
 
   const handleNavigate = (page) => {
     if (currentPage === "video" && page !== "video") {
