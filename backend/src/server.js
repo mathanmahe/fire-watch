@@ -13,7 +13,7 @@ import {
 } from "./services/mediamtx.js";
 import { cameras as camerasRouter } from "./routes/cameras.js";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
-import { startCloudDetector } from "./services/cloudDetector.js"; // ✅ FIXED PATH
+import { startCloudDetector, setBroadcastFunction } from "./services/cloudDetector.js";
 
 const log = pino({ name: "server" });
 const app = express();
@@ -73,8 +73,14 @@ wss.on("connection", async (ws, req) => {
 // 🔥 Broadcast helper for fire detection
 // -------------------------------------------------------------------
 export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
+  log.info({ userId, cameraId, cameraName, isFire, totalUsers: wsClients.size }, "🔥 broadcastFireDetection called");
+
   const clients = wsClients.get(userId);
-  if (!clients || clients.size === 0) return;
+
+  if (!clients || clients.size === 0) {
+    log.warn({ userId, cameraId, availableUsers: Array.from(wsClients.keys()) }, "⚠️ No WebSocket clients found for userId");
+    return;
+  }
 
   const payload = JSON.stringify({
     type: "fire-detection",
@@ -84,11 +90,19 @@ export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
     timestamp: new Date().toISOString(),
   });
 
+  log.info({ userId, cameraId, clientCount: clients.size, payload }, "📡 Sending to WebSocket clients");
+
+  let sentCount = 0;
   for (const client of clients) {
-    if (client.readyState === 1) client.send(payload);
+    if (client.readyState === 1) {
+      client.send(payload);
+      sentCount++;
+    } else {
+      log.warn({ userId, cameraId, readyState: client.readyState }, "⚠️ Client not in OPEN state");
+    }
   }
 
-  log.info({ userId, cameraId, isFire }, "📢 Fire detection broadcasted");
+  log.info({ userId, cameraId, isFire, sentCount }, "📢 Fire detection broadcasted");
 }
 
 // -------------------------------------------------------------------
@@ -115,6 +129,10 @@ app.use("/api/cameras", camerasRouter);
 // -------------------------------------------------------------------
 async function main() {
   await prisma.$connect();
+
+  // Step 0: Register WebSocket broadcast function with cloud detector
+  setBroadcastFunction(broadcastFireDetection);
+  log.info("🔌 WebSocket broadcast function registered with cloud detector");
 
   // Step 1: Start MediaMTX
   try {

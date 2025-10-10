@@ -6,14 +6,16 @@ import pino from "pino";
 const log = pino({ name: "cloud-detector" });
 const workers = new Map();
 
-// Dynamically import broadcast function from server.js
-let broadcastFireDetection;
-try {
-  const mod = await import("./server.js");
-  broadcastFireDetection = mod.broadcastFireDetection;
-  log.info("✅ WebSocket broadcast integration ready");
-} catch (e) {
-  log.warn("⚠️ Could not import broadcastFireDetection:", e.message);
+// Store broadcast function (set by setBroadcastFunction)
+let broadcastFireDetection = null;
+
+/**
+ * Set the broadcast function for fire detection alerts.
+ * Called from server.js to avoid circular dependency.
+ */
+export function setBroadcastFunction(fn) {
+  broadcastFireDetection = fn;
+  log.info("✅ WebSocket broadcast function registered");
 }
 
 // -------------------------------------------------------------------
@@ -111,9 +113,12 @@ export function startCloudDetector(cam, { fps = 0.2 } = {}) {
         const fire = !!(res?.fire_detected || res?.isFire || res?.detections?.length > 0);
 
         if (fire) {
-          log.warn({ cam: cam.name, userId: cam.userId }, "🔥 FIRE DETECTED");
+          log.warn({ cam: cam.name, userId: cam.userId, cameraId: cam.id }, "🔥 FIRE DETECTED");
           if (broadcastFireDetection) {
+            log.info({ userId: cam.userId, cameraId: cam.id, cameraName: cam.name }, "📢 Broadcasting fire detection to WebSocket clients");
             broadcastFireDetection(cam.userId, cam.id, cam.name, true);
+          } else {
+            log.warn("⚠️ broadcastFireDetection function not available");
           }
         } else {
           log.info({ cam: cam.name, fire }, "✅ No fire detected");
