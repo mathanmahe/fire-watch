@@ -4,6 +4,7 @@ import os from "node:os";
 import yaml from "js-yaml";
 import pino from "pino";
 import { prisma } from "../db/prisma.js";
+import { cfg } from "../config.js";  // ✅ Import at top level, not inside function
 
 const log = pino({ name: "mediamtx-config-generator" });
 
@@ -14,14 +15,30 @@ const log = pino({ name: "mediamtx-config-generator" });
 export async function generateMediaMTXConfig() {
   log.info("Starting MediaMTX config generation...");
 
+  console.log('🔍 mediamtxConfigGenerator - cfg:', cfg);
+  console.log('🔍 mediamtxConfigGenerator - cfg.userId:', cfg.userId);
+
   try {
-    // 1. Fetch all active cameras from database
+    const currentUserId = cfg.userId;
+    console.log('🔍 mediamtxConfigGenerator - currentUserId:', currentUserId);
+
+    // ✅ Build where clause with user filter
+    const whereClause = currentUserId
+      ? { userId: currentUserId, isActive: true }
+      : { isActive: true };
+
+    // 1. Fetch cameras with user filtering
     const cameras = await prisma.camera.findMany({
-      where: { isActive: true },
+      where: whereClause,
       orderBy: { id: "asc" },
     });
 
-    log.info(`Found ${cameras.length} active cameras in database`);
+    if (currentUserId) {
+      log.info(`Found ${cameras.length} active cameras for user ${currentUserId}`);
+    } else {
+      log.info(`Found ${cameras.length} active cameras in database`);
+      log.warn("⚠️ No USER_ID set - generating config for ALL cameras");
+    }
 
     // 2. Detect server IP address
     const serverIP = detectServerIP();

@@ -1,7 +1,10 @@
 import 'dotenv/config';
 
+console.log('🔍 config.js - process.env.USER_ID:', process.env.USER_ID);
+
 export const cfg = {
   dbUrl: process.env.DATABASE_URL,
+  userId: process.env.USER_ID,
   cognito: {
     poolId: process.env.COGNITO_USER_POOL_ID,
     clientId: process.env.COGNITO_CLIENT_ID,
@@ -14,3 +17,5 @@ export const cfg = {
   fireEndpoint: process.env.FIRE_ENDPOINT,
   port: Number(process.env.PORT || 4000)
 };
+
+console.log('🔍 config.js - cfg.userId:', cfg.userId);
