@@ -14,13 +14,13 @@ let loopInterval = null;
 let broadcastFireDetection = null;
 
 // Track detection state per camera
-const cameraStates = new Map(); // cameraId -> { isFire, lastChecked, consecutiveDetections }
+const cameraStates = new Map(); // cameraId -> { isFire, lastChecked, consecutiveDetections, streamStarting }
 
 // -------------------------------------------------------------------
 // 🔧 Configuration
 // -------------------------------------------------------------------
-const INTERVAL_MS = 5000; // 5 seconds between cameras
-const CONSECUTIVE_DETECTIONS_REQUIRED = 2; // Fire must be detected N times before starting stream
+const INTERVAL_MS = 10000; // ✅ 10 seconds between cameras
+const CONSECUTIVE_DETECTIONS_REQUIRED = 1; // Fire must be detected N times before starting stream
 const CONSECUTIVE_CLEAR_REQUIRED = 3; // Must be clear N times before stopping stream
 
 // -------------------------------------------------------------------
@@ -35,7 +35,6 @@ export function setBroadcastFunction(fn) {
 // ➕ Add Camera to Queue
 // -------------------------------------------------------------------
 export function addCameraToQueue(camera) {
-  // Check if camera already exists
   const exists = cameraQueue.find((c) => c.id === camera.id);
   if (exists) {
     log.warn({ cameraId: camera.id, name: camera.name }, "Camera already in queue");
@@ -50,6 +49,7 @@ export function addCameraToQueue(camera) {
     lastChecked: null,
     consecutiveDetections: 0,
     consecutiveClear: 0,
+    streamStarting: false, // ✅ Track if stream is being started
   });
 
   log.info({ 
@@ -58,7 +58,6 @@ export function addCameraToQueue(camera) {
     queueSize: cameraQueue.length 
   }, "📹 Camera added to detection queue");
 
-  // Start queue if not running
   if (!isRunning) {
     startQueueLoop();
   }
@@ -83,7 +82,6 @@ export function removeCameraFromQueue(cameraId) {
     stopCameraStream(camera);
   }
   
-  // Clean up state
   cameraStates.delete(cameraId);
 
   log.info({ 
@@ -92,12 +90,10 @@ export function removeCameraFromQueue(cameraId) {
     queueSize: cameraQueue.length 
   }, "🗑️ Camera removed from detection queue");
 
-  // Adjust current index if needed
   if (currentIndex >= cameraQueue.length) {
     currentIndex = 0;
   }
 
-  // Stop queue if empty
   if (cameraQueue.length === 0 && isRunning) {
     stopQueueLoop();
   }
@@ -120,7 +116,6 @@ async function startQueueLoop() {
       return;
     }
 
-    // Get current camera
     const camera = cameraQueue[currentIndex];
     
     if (!camera) {
@@ -159,20 +154,35 @@ async function startQueueLoop() {
           confidence: result.confidence 
         }, "🔥 FIRE DETECTED");
 
-        // Start stream if threshold reached and not already streaming
-        if (state.consecutiveDetections >= CONSECUTIVE_DETECTIONS_REQUIRED && !state.isFire) {
+        // ✅ Start stream if threshold reached and not already streaming or starting
+        if (state.consecutiveDetections >= CONSECUTIVE_DETECTIONS_REQUIRED && 
+            !state.isFire && 
+            !state.streamStarting &&
+            !isStreamActive(camera.id)) {
+          
           state.isFire = true;
+          state.streamStarting = true; // ✅ Mark as starting to prevent duplicates
           
           log.warn({ 
             cameraId: camera.id, 
             name: camera.name 
           }, "🚨 FIRE CONFIRMED - Starting stream");
 
-          await startCameraStream(camera);
-          
-          // Broadcast to WebSocket
-          if (broadcastFireDetection) {
-            broadcastFireDetection(camera.userId, camera.id, camera.name, true);
+          try {
+            await startCameraStream(camera);
+            state.streamStarting = false; // ✅ Stream started successfully
+            
+            // Broadcast to WebSocket
+            if (broadcastFireDetection) {
+              broadcastFireDetection(camera.userId, camera.id, camera.name, true);
+            }
+          } catch (error) {
+            log.error({ 
+              cameraId: camera.id, 
+              error: error.message 
+            }, "❌ Failed to start stream");
+            state.streamStarting = false; // ✅ Reset flag on error
+            state.isFire = false; // Allow retry on next detection
           }
         }
       } else {
@@ -208,6 +218,11 @@ async function startQueueLoop() {
         name: camera.name,
         error: error.message 
       }, "❌ Detection error");
+      
+      // ✅ Reset streamStarting flag on error
+      if (state.streamStarting) {
+        state.streamStarting = false;
+      }
     }
 
     // Move to next camera
@@ -217,7 +232,6 @@ async function startQueueLoop() {
     loopInterval = setTimeout(loop, INTERVAL_MS);
   }
 
-  // Start the loop
   loop();
 }
 

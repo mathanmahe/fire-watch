@@ -3,12 +3,10 @@ import pino from "pino";
 import { cfg } from "../config.js";
 
 const log = pino({ name: "stream-manager" });
-
-// Track active streams
-const activeStreams = new Map(); // cameraId -> { process, startTime }
+const activeStreams = new Map();
 
 // -------------------------------------------------------------------
-// ▶️ Start Camera Stream
+// ▶️ Start Camera Stream (OPTIMIZED FOR LOW LATENCY)
 // -------------------------------------------------------------------
 export async function startCameraStream(camera) {
   if (activeStreams.has(camera.id)) {
@@ -19,7 +17,7 @@ export async function startCameraStream(camera) {
   try {
     log.info({ cameraId: camera.id, name: camera.name }, "▶️ Starting camera stream");
 
-    // Build source URL
+    // Build source URL from REAL camera
     const sourceUrl = buildSourceUrl(camera);
     
     // Build MediaMTX destination
@@ -28,37 +26,35 @@ export async function startCameraStream(camera) {
 
     log.info({ 
       cameraId: camera.id,
-      source: sourceUrl.replace(/:([^:@]+)@/, ":****@"), // Hide password
+      source: sourceUrl.replace(/:([^:@]+)@/, ":****@"),
       destination: destUrl 
     }, "Stream URLs");
 
-    // Determine if source is HLS or RTSP
-    const isHLS = sourceUrl.includes(".m3u8") || camera.streamType === "HLS";
+    const isHLS = sourceUrl.includes(".m3u8");
 
-    // Spawn ffmpeg process to relay stream to MediaMTX
-    const ffmpegArgs = ["-y"];
+// ✅ SIMPLIFIED FFMPEG ARGS for better reliability
+const ffmpegArgs = ["-y"];
 
-    if (!isHLS) {
-      // RTSP source - add TCP transport
-      ffmpegArgs.push(
-        "-rtsp_transport", "tcp",
-        "-timeout", "5000000",
-        "-i", sourceUrl
-      );
-    } else {
-      // HLS source
-      ffmpegArgs.push(
-        "-i", sourceUrl
-      );
-    }
-
-    // Output to MediaMTX RTSP
-    ffmpegArgs.push(
-      "-c:v", "copy",        // Copy video codec (no re-encoding)
-      "-c:a", "copy",        // Copy audio codec (if present)
-      "-f", "rtsp",          // Output format
-      destUrl
-    );
+if (!isHLS) {
+  // RTSP source - SIMPLIFIED
+  ffmpegArgs.push(
+    "-rtsp_transport", "tcp",
+    "-i", sourceUrl,
+    "-c:v", "copy",           // Just copy, no re-encoding
+    "-an",                    // ✅ Drop audio to reduce load
+    "-f", "rtsp",
+    destUrl
+  );
+} else {
+  // HLS source
+  ffmpegArgs.push(
+    "-i", sourceUrl,
+    "-c:v", "copy",
+    "-an",                    // ✅ Drop audio to reduce load
+    "-f", "rtsp",
+    destUrl
+  );
+}
 
     const streamProcess = spawn(cfg.ffmpeg, ffmpegArgs, {
       stdio: ["ignore", "pipe", "pipe"]
@@ -129,11 +125,8 @@ export async function stopCameraStream(camera) {
 
   try {
     log.info({ cameraId: camera.id, name: camera.name }, "⏹️ Stopping camera stream");
-
-    // Kill the ffmpeg process
     stream.process.kill("SIGTERM");
 
-    // Give it 2 seconds to gracefully exit, then force kill
     setTimeout(() => {
       if (activeStreams.has(camera.id)) {
         log.warn({ cameraId: camera.id }, "Forcing stream kill");
@@ -196,11 +189,11 @@ export async function stopAllStreams() {
 }
 
 // -------------------------------------------------------------------
-// 🔧 Build Source URL (handles RTSP, HLS, WebRTC)
+// 🔧 Build Source URL
 // -------------------------------------------------------------------
 function buildSourceUrl(camera) {
-  // Handle RTSP cameras with IP address
-  if (camera.streamType === "RTSP" && camera.ip) {
+  // PRIORITY 1: RTSP camera with IP
+  if (camera.ip && camera.ip.trim() !== '') {
     const protocol = "rtsp://";
     const auth = camera.username && camera.password
       ? `${encodeURIComponent(camera.username)}:${encodeURIComponent(camera.password)}@`
@@ -210,18 +203,13 @@ function buildSourceUrl(camera) {
     return `${protocol}${auth}${addr}${path}`;
   }
 
-  // Handle HLS streams with direct URL
-  if (camera.streamType === "HLS" && camera.hlsUrl) {
+  // PRIORITY 2: Direct HLS URL
+  if (camera.hlsUrl && camera.hlsUrl.trim() !== '') {
     return camera.hlsUrl;
   }
 
-  // Handle WebRTC via MediaMTX HLS endpoint (for streams already in MediaMTX)
-  if (camera.streamType === "WEBRTC" && camera.streamName) {
-    const base = camera.webrtcBase?.replace(/:\d+$/, ":8888") || "http://127.0.0.1:8888";
-    const name = camera.streamName;
-    return `${base}/${encodeURIComponent(name)}/index.m3u8`;
-  }
-
-  // If nothing matches, throw error
-  throw new Error(`Cannot build stream URL for camera ${camera.name}. Camera needs either: (1) RTSP with ip/port, (2) HLS with hlsUrl, or (3) WebRTC with streamName`);
+  throw new Error(
+    `Cannot build stream URL for camera ${camera.name}. ` +
+    `Needs either: ip+port or hlsUrl`
+  );
 }

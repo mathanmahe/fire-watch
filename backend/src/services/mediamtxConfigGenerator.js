@@ -82,28 +82,33 @@ export async function generateMediaMTXConfig() {
  */
 function buildMediaMTXConfig(cameras, serverIP) {
   const config = {
-    logLevel: "debug",
+    logLevel: "info", // Changed from "debug" to reduce logs
 
-    // HLS server configuration
+    // ✅ OPTIMIZED HLS for low latency
     hls: true,
     hlsAddress: ":8888",
     hlsAllowOrigin: "*",
     hlsVariant: "lowLatency",
+    hlsSegmentCount: 3,          // ✅ Reduce segments for lower latency
+    hlsSegmentDuration: "1s",    // ✅ 1-second segments (was default 3s)
+    hlsPartDuration: "200ms",    // ✅ Sub-second chunks
 
-    // WebRTC server configuration
+    // ✅ OPTIMIZED WebRTC for low latency
     webrtc: true,
     webrtcAddress: ":8889",
     webrtcAllowOrigin: "*",
     webrtcLocalUDPAddress: ":8189",
     webrtcLocalTCPAddress: ":8189",
-
-    // Advertise correct IPs to clients (LAN)
     webrtcIPsFromInterfaces: false,
     webrtcAdditionalHosts: [serverIP],
 
-    // RTSP server configuration
+    // RTSP server
     rtsp: true,
     rtspAddress: ":8554",
+    
+    // ✅ Reduce read timeout for faster disconnection detection
+    readTimeout: "10s",
+    writeTimeout: "10s",
 
     // Camera paths
     paths: buildCameraPaths(cameras),

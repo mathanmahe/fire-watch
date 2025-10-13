@@ -20,7 +20,7 @@ function getSession() {
     log.info({ modelPath }, "Loading ONNX model...");
     
     sessionPromise = ort.InferenceSession.create(modelPath, {
-      executionProviders: ["cpu"], // Use CPU provider for Node.js
+      executionProviders: ["cpu"],
     }).then((session) => {
       log.info("✅ ONNX session ready");
       return session;
@@ -71,22 +71,19 @@ function grabFrameOnce(srcUrl) {
 // -------------------------------------------------------------------
 async function prepareInput(jpegBuffer, modelInputSize = 640) {
   try {
-    // Resize image to model input size (640x640) and extract raw RGB data
     const { data, info } = await sharp(jpegBuffer)
       .resize(modelInputSize, modelInputSize, { fit: "fill" })
       .raw()
       .toBuffer({ resolveWithObject: true });
 
-    // Convert to Float32Array and normalize to [0, 1]
-    // YOLO expects CHW format: [batch, channels, height, width]
     const N = modelInputSize * modelInputSize;
-    const arr = new Float32Array(N * 3); // CHW, [0..1]
+    const arr = new Float32Array(N * 3);
 
     let r = 0, g = N, b = 2 * N;
     for (let i = 0; i < data.length; i += 3) {
-      arr[r++] = data[i] / 255;       // R channel
-      arr[g++] = data[i + 1] / 255;   // G channel
-      arr[b++] = data[i + 2] / 255;   // B channel
+      arr[r++] = data[i] / 255;
+      arr[g++] = data[i + 1] / 255;
+      arr[b++] = data[i + 2] / 255;
     }
 
     return arr;
@@ -110,8 +107,6 @@ async function runInference(inputTensor) {
     );
 
     const outputs = await session.run({ images: tensor });
-    
-    // Get the first output (flexible to different output names)
     const outputData = outputs[Object.keys(outputs)[0]].data;
     
     return outputData;
@@ -122,7 +117,7 @@ async function runInference(inputTensor) {
 }
 
 // -------------------------------------------------------------------
-// 📊 Process ONNX Output (Port from videoDetector.js)
+// 📊 Process ONNX Output
 // -------------------------------------------------------------------
 function processOutput(output, imgW = 640, imgH = 640) {
   let boxes = [];
@@ -130,12 +125,11 @@ function processOutput(output, imgW = 640, imgH = 640) {
   let smokeCount = 0;
   let totalFireArea = 0;
 
-  const cells = 8400; // model-specific
-  const clsCount = 3; // Fire/Smoke/Other
+  const cells = 8400;
+  const clsCount = 3;
   const probThreshold = 0.2;
 
   for (let i = 0; i < cells; i++) {
-    // pick max-prob class
     let classId = 0, best = 0;
     for (let c = 0; c < clsCount; c++) {
       const p = output[cells * (c + 4) + i];
@@ -170,7 +164,7 @@ function processOutput(output, imgW = 640, imgH = 640) {
     }
   }
 
-  // NMS (Non-Maximum Suppression) - simple IoU
+  // NMS
   boxes.sort((a, b) => b[5] - a[5]);
   const keep = [];
   
@@ -209,16 +203,9 @@ function processOutput(output, imgW = 640, imgH = 640) {
 // -------------------------------------------------------------------
 export async function detectFire(cameraUrl, cameraName) {
   try {
-    // Step 1: Grab frame from camera
     const jpegBuffer = await grabFrameOnce(cameraUrl);
-    
-    // Step 2: Preprocess image
     const inputTensor = await prepareInput(jpegBuffer, 640);
-    
-    // Step 3: Run inference
     const outputData = await runInference(inputTensor);
-    
-    // Step 4: Process output
     const result = processOutput(outputData, 640, 640);
     
     log.info({ 
@@ -251,25 +238,34 @@ export async function detectFire(cameraUrl, cameraName) {
 }
 
 // -------------------------------------------------------------------
-// 🎥 Build Camera Input URL
+// 🎥 Build Camera Input URL (CRITICAL FIX)
 // -------------------------------------------------------------------
 export function buildCameraUrl(cam) {
-  if (cam.streamType === "HLS" && cam.hlsUrl) {
-    return cam.hlsUrl;
-  }
-
-  if (cam.streamType === "RTSP" && cam.ip) {
+  // ✅ PRIORITY 1: RTSP camera with IP address (YOUR REAL CAMERA)
+  if (cam.ip && cam.ip.trim() !== '') {
     const protocol = "rtsp://";
     const auth = cam.username && cam.password
       ? `${encodeURIComponent(cam.username)}:${encodeURIComponent(cam.password)}@`
       : "";
     const addr = cam.port ? `${cam.ip}:${cam.port}` : cam.ip;
     const path = cam.streamPath || "/live";
-    return `${protocol}${auth}${addr}${path}`;
+    const url = `${protocol}${auth}${addr}${path}`;
+    
+    log.debug({ cameraId: cam.id, url: url.replace(/:([^:@]+)@/, ":****@") }, "Built RTSP URL for detection");
+    return url;
   }
 
-  // Default to MediaMTX HLS endpoint
-  const base = cam.webrtcBase?.replace(/:\d+$/, ":8888") || "http://127.0.0.1:8888";
-  const name = cam.streamName || cam.name;
-  return `${base}/${encodeURIComponent(name)}/index.m3u8`;
+  // ✅ PRIORITY 2: HLS stream URL
+  if (cam.hlsUrl && cam.hlsUrl.trim() !== '') {
+    log.debug({ cameraId: cam.id, url: cam.hlsUrl }, "Using HLS URL for detection");
+    return cam.hlsUrl;
+  }
+
+  // ❌ Don't use MediaMTX as source - that's the destination!
+  const errorMsg = `Cannot build camera URL for ${cam.name}. ` +
+    `Camera needs either: (1) ip+port for RTSP, or (2) hlsUrl for HLS. ` +
+    `Current: ip=${cam.ip || 'null'}, hlsUrl=${cam.hlsUrl || 'null'}`;
+  
+  log.error({ cameraId: cam.id, name: cam.name }, errorMsg);
+  throw new Error(errorMsg);
 }
