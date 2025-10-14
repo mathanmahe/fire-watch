@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import { useCameras } from "../store/cameras.jsx";
 import StreamingIcon from "./StreamingIcon.jsx";
 import FireStatusButton from "./FireStatusButton.jsx";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaStopCircle } from "react-icons/fa";
 import { ImFire } from "react-icons/im";
+import { cameraApi } from "../services/cameraApi.js";
 
 export default function MiniStatusPanel({ viewMode = "grid" }) {
   const { cameras, toggleCameraVisibility, setCameraVisibilities } =
     useCameras();
   const [filter, setFilter] = useState("all");
+  const [isStoppingDetection, setIsStoppingDetection] = useState(false);
 
   const handleFilterChange = (newFilter) => {
     // Toggle off if clicking the same filter
@@ -32,6 +34,27 @@ export default function MiniStatusPanel({ viewMode = "grid" }) {
     });
 
     setCameraVisibilities(visibilityMap);
+  };
+
+  const handleStopDetection = async () => {
+    if (isStoppingDetection || cameras.length === 0) return;
+
+    setIsStoppingDetection(true);
+    try {
+      const cameraIds = cameras.map((cam) => cam.id);
+      const response = await cameraApi.stopDetectionForAllCameras(cameraIds);
+      console.log("Stop detection response:", response);
+
+      // Show success message or handle response
+      alert(
+        `Successfully stopped detection for ${response.stopped.length} camera(s)`
+      );
+    } catch (error) {
+      console.error("Failed to stop detection:", error);
+      alert(`Failed to stop detection: ${error.message}`);
+    } finally {
+      setIsStoppingDetection(false);
+    }
   };
 
   const isDisabled = viewMode === "single";
@@ -129,6 +152,21 @@ export default function MiniStatusPanel({ viewMode = "grid" }) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Stop Detection Button */}
+      <div className="stop-detection-section">
+        <button
+          className={`stop-detection-btn ${
+            isStoppingDetection ? "loading" : ""
+          }`}
+          onClick={handleStopDetection}
+          disabled={isStoppingDetection || cameras.length === 0}
+          title="Stop fire detection for all cameras"
+        >
+          <FaStopCircle size={20} />
+          <span>{isStoppingDetection ? "Stopping..." : "Stop Detection"}</span>
+        </button>
       </div>
     </div>
   );

@@ -60,6 +60,13 @@ class CameraApiService {
       method: "DELETE",
     });
   }
+
+  async stopDetectionForAllCameras(cameraIds) {
+    return this.request("/api/cameras/stop-detection", {
+      method: "POST",
+      body: JSON.stringify({ cameraIds }),
+    });
+  }
 }
 
 export const cameraApi = new CameraApiService();
