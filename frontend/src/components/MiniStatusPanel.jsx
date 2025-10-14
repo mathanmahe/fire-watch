@@ -45,6 +45,13 @@ export default function MiniStatusPanel({ viewMode = "grid" }) {
       const response = await cameraApi.stopDetectionForAllCameras(cameraIds);
       console.log("Stop detection response:", response);
 
+      // Hide all cameras after stopping detection
+      const hideAllCameras = {};
+      cameras.forEach((cam) => {
+        hideAllCameras[cam.id] = false;
+      });
+      setCameraVisibilities(hideAllCameras);
+
       // Show success message or handle response
       alert(
         `Successfully stopped detection for ${response.stopped.length} camera(s)`
