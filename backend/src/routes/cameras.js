@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { prisma } from "../db/prisma.js";
 import {
-  startCloudDetector,
-  stopCloudDetector,
-  getRunningDetectors,
-} from "../services/cloudDetector.js";
+  addCameraToQueue,
+  removeCameraFromQueue,
+  getQueueStatus,
+} from "../services/detectionQueue.js";
 import {
   detectServerIP,
   sanitizePathName,
@@ -23,17 +23,21 @@ cameras.post("/", async (req, res) => {
     const cameraData = {
       ...req.body,
       userId,
-      // Auto-populate streamName if not provided (for WebRTC endpoint)
       streamName: req.body.streamName || sanitizePathName(req.body.name),
-      // Use provided streamPath or default to "/live" (for RTSP stream path)
       streamPath: req.body.streamPath || "/live",
-      // Auto-populate webrtcBase if not provided
       webrtcBase: req.body.webrtcBase || `http://${serverIP}:8889`,
+      detection: "LOCAL", // Force local detection
+      isActive: true,
     };
 
     const cam = await prisma.camera.create({
       data: cameraData,
     });
+
+    // Automatically start local detection for new camera
+    if (cam.isActive) {
+      addCameraToQueue(cam);
+    }
 
     res.json(cam);
   } catch (error) {
@@ -55,7 +59,6 @@ cameras.get("/", async (req, res) => {
   }
 });
 
-// SPECIFIC ROUTES MUST COME BEFORE /:id ROUTES
 // Get detection status - MOVED BEFORE /:id
 cameras.get("/detection-status", async (req, res) => {
   try {
@@ -65,13 +68,15 @@ cameras.get("/detection-status", async (req, res) => {
       orderBy: { id: "asc" },
     });
 
-    const running = getRunningDetectors();
+    const queueStatus = getQueueStatus();
 
     const status = cameraList.map((cam) => ({
       id: cam.id,
       name: cam.name,
       location: cam.location,
-      isRunning: running.has(cam.id),
+      isRunning: queueStatus.cameras.some((c) => c.id === cam.id),
+      isFire: queueStatus.fireDetections[cam.id] || false,
+      lastChecked: queueStatus.lastChecked[cam.id] || null,
     }));
 
     res.json(status);
@@ -89,15 +94,15 @@ cameras.get("/status/all", async (req, res) => {
       orderBy: { id: "asc" },
     });
 
-    const running = getRunningDetectors();
+    const queueStatus = getQueueStatus();
 
     res.json(
       cams.map((c) => ({
         id: c.id,
         name: c.name,
         location: c.location,
-        isStreaming: running.has(c.id),
-        isFire: false,
+        isStreaming: queueStatus.streamingCameras.has(c.id),
+        isFire: queueStatus.fireDetections[c.id] || false,
         isView: c.isActive,
       }))
     );
@@ -134,7 +139,13 @@ cameras.post("/start-detection", async (req, res) => {
 
     for (const cam of cameraList) {
       try {
-        startCloudDetector(cam);
+        // Update camera to active
+        await prisma.camera.update({
+          where: { id: cam.id },
+          data: { isActive: true },
+        });
+        
+        addCameraToQueue(cam);
         started.push({ id: cam.id, name: cam.name });
       } catch (error) {
         failed.push({ id: cam.id, name: cam.name, error: error.message });
@@ -173,7 +184,13 @@ cameras.post("/stop-detection", async (req, res) => {
     const stopped = [];
 
     for (const cam of cameraList) {
-      stopCloudDetector(cam.id);
+      // Update camera to inactive
+      await prisma.camera.update({
+        where: { id: cam.id },
+        data: { isActive: false },
+      });
+      
+      removeCameraFromQueue(cam.id);
       stopped.push({ id: cam.id, name: cam.name });
     }
 
@@ -226,6 +243,15 @@ cameras.put("/:id", async (req, res) => {
       data: req.body,
     });
 
+    // If isActive changed, update queue
+    if (req.body.isActive !== undefined) {
+      if (req.body.isActive) {
+        addCameraToQueue(cam);
+      } else {
+        removeCameraFromQueue(cam.id);
+      }
+    }
+
     res.json(cam);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -246,7 +272,9 @@ cameras.delete("/:id", async (req, res) => {
       return res.status(404).json({ error: "Camera not found" });
     }
 
-    stopCloudDetector(id);
+    // Remove from detection queue and stop any active streams
+    removeCameraFromQueue(id);
+    
     await prisma.camera.delete({ where: { id } });
 
     res.json({ ok: true });

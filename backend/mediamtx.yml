@@ -1,8 +1,11 @@
-logLevel: debug
+logLevel: info
 hls: true
 hlsAddress: ':8888'
 hlsAllowOrigin: '*'
 hlsVariant: lowLatency
+hlsSegmentCount: 3
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
 webrtc: true
 webrtcAddress: ':8889'
 webrtcAllowOrigin: '*'
@@ -10,19 +13,19 @@ webrtcLocalUDPAddress: ':8189'
 webrtcLocalTCPAddress: ':8189'
 webrtcIPsFromInterfaces: false
 webrtcAdditionalHosts:
-  - 10.0.0.160
+  - 192.168.1.196
 rtsp: true
 rtspAddress: ':8554'
+readTimeout: 10s
+writeTimeout: 10s
 paths:
-  cctv_front_door:
+  camera1:
     source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
-  test_fire_video:
-    source: https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4
-  cam-1:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
-  cam-2:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
-  cam-3:
-    source: rtsp://admin:CCTVCheck%40123!@10.0.0.123:8554/live
-  cam1111:
+  camera2:
+    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
+  camera3:
+    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
+  camera4_:
+    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
+  camera5:
     source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main

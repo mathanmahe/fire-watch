@@ -4,6 +4,7 @@ import os from "node:os";
 import yaml from "js-yaml";
 import pino from "pino";
 import { prisma } from "../db/prisma.js";
+import { cfg } from "../config.js";  // ✅ Import at top level, not inside function
 
 const log = pino({ name: "mediamtx-config-generator" });
 
@@ -14,14 +15,30 @@ const log = pino({ name: "mediamtx-config-generator" });
 export async function generateMediaMTXConfig() {
   log.info("Starting MediaMTX config generation...");
 
+  console.log('🔍 mediamtxConfigGenerator - cfg:', cfg);
+  console.log('🔍 mediamtxConfigGenerator - cfg.userId:', cfg.userId);
+
   try {
-    // 1. Fetch all active cameras from database
+    const currentUserId = cfg.userId;
+    console.log('🔍 mediamtxConfigGenerator - currentUserId:', currentUserId);
+
+    // ✅ Build where clause with user filter
+    const whereClause = currentUserId
+      ? { userId: currentUserId, isActive: true }
+      : { isActive: true };
+
+    // 1. Fetch cameras with user filtering
     const cameras = await prisma.camera.findMany({
-      where: { isActive: true },
+      where: whereClause,
       orderBy: { id: "asc" },
     });
 
-    log.info(`Found ${cameras.length} active cameras in database`);
+    if (currentUserId) {
+      log.info(`Found ${cameras.length} active cameras for user ${currentUserId}`);
+    } else {
+      log.info(`Found ${cameras.length} active cameras in database`);
+      log.warn("⚠️ No USER_ID set - generating config for ALL cameras");
+    }
 
     // 2. Detect server IP address
     const serverIP = detectServerIP();
@@ -65,28 +82,33 @@ export async function generateMediaMTXConfig() {
  */
 function buildMediaMTXConfig(cameras, serverIP) {
   const config = {
-    logLevel: "debug",
+    logLevel: "info", // Changed from "debug" to reduce logs
 
-    // HLS server configuration
+    // ✅ OPTIMIZED HLS for low latency
     hls: true,
     hlsAddress: ":8888",
     hlsAllowOrigin: "*",
     hlsVariant: "lowLatency",
+    hlsSegmentCount: 3,          // ✅ Reduce segments for lower latency
+    hlsSegmentDuration: "1s",    // ✅ 1-second segments (was default 3s)
+    hlsPartDuration: "200ms",    // ✅ Sub-second chunks
 
-    // WebRTC server configuration
+    // ✅ OPTIMIZED WebRTC for low latency
     webrtc: true,
     webrtcAddress: ":8889",
     webrtcAllowOrigin: "*",
     webrtcLocalUDPAddress: ":8189",
     webrtcLocalTCPAddress: ":8189",
-
-    // Advertise correct IPs to clients (LAN)
     webrtcIPsFromInterfaces: false,
     webrtcAdditionalHosts: [serverIP],
 
-    // RTSP server configuration
+    // RTSP server
     rtsp: true,
     rtspAddress: ":8554",
+    
+    // ✅ Reduce read timeout for faster disconnection detection
+    readTimeout: "10s",
+    writeTimeout: "10s",
 
     // Camera paths
     paths: buildCameraPaths(cameras),
