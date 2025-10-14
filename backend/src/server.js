@@ -13,10 +13,10 @@ import {
 } from "./services/mediamtx.js";
 import { cameras as camerasRouter } from "./routes/cameras.js";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
-import { 
-  startDetectionQueue, 
+import {
+  startDetectionQueue,
   stopDetectionQueue,
-  setBroadcastFunction 
+  setBroadcastFunction,
 } from "./services/detectionQueue.js";
 
 const log = pino({ name: "server" });
@@ -56,21 +56,27 @@ wss.on("connection", async (ws, req) => {
 
     // ✅ AUTO-DETECT: If this is a new user, restart detection queue
     if (!currentUserId || currentUserId !== userId) {
-      log.info({ oldUser: currentUserId, newUser: userId }, "🔄 New user detected, switching detection queue");
-      
+      log.info(
+        { oldUser: currentUserId, newUser: userId },
+        "🔄 New user detected, switching detection queue"
+      );
+
       currentUserId = userId;
-      
+
       // Stop existing queue
       await stopDetectionQueue();
-      
+
       // Load cameras for new user
       const userCameras = await prisma.camera.findMany({
         where: { userId: currentUserId, isActive: true },
         orderBy: { id: "asc" },
       });
-      
+
       if (userCameras.length > 0) {
-        log.info({ userId, count: userCameras.length }, "🎥 Starting detection for new user's cameras");
+        log.info(
+          { userId, count: userCameras.length },
+          "🎥 Starting detection for new user's cameras"
+        );
         await startDetectionQueue(userCameras);
       } else {
         log.warn({ userId }, "⚠️ No cameras found for this user");
@@ -92,7 +98,7 @@ wss.on("connection", async (ws, req) => {
         if (clients.size === 0) {
           wsClients.delete(userId);
           log.info({ userId }, "❌ Last WebSocket disconnected for user");
-          
+
           // ✅ OPTIONAL: Stop detection when user disconnects
           // if (userId === currentUserId) {
           //   log.info("⏸️ Stopping detection queue (no users connected)");
@@ -113,12 +119,18 @@ wss.on("connection", async (ws, req) => {
 // 🔥 Broadcast helper for fire detection
 // -------------------------------------------------------------------
 export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
-  log.info({ userId, cameraId, cameraName, isFire, totalUsers: wsClients.size }, "🔥 broadcastFireDetection called");
+  log.info(
+    { userId, cameraId, cameraName, isFire, totalUsers: wsClients.size },
+    "🔥 broadcastFireDetection called"
+  );
 
   const clients = wsClients.get(userId);
 
   if (!clients || clients.size === 0) {
-    log.warn({ userId, cameraId, availableUsers: Array.from(wsClients.keys()) }, "⚠️ No WebSocket clients found for userId");
+    log.warn(
+      { userId, cameraId, availableUsers: Array.from(wsClients.keys()) },
+      "⚠️ No WebSocket clients found for userId"
+    );
     return;
   }
 
@@ -130,7 +142,10 @@ export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
     timestamp: new Date().toISOString(),
   });
 
-  log.info({ userId, cameraId, clientCount: clients.size, payload }, "📡 Sending to WebSocket clients");
+  log.info(
+    { userId, cameraId, clientCount: clients.size, payload },
+    "📡 Sending to WebSocket clients"
+  );
 
   let sentCount = 0;
   for (const client of clients) {
@@ -138,11 +153,17 @@ export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
       client.send(payload);
       sentCount++;
     } else {
-      log.warn({ userId, cameraId, readyState: client.readyState }, "⚠️ Client not in OPEN state");
+      log.warn(
+        { userId, cameraId, readyState: client.readyState },
+        "⚠️ Client not in OPEN state"
+      );
     }
   }
 
-  log.info({ userId, cameraId, isFire, sentCount }, "📢 Fire detection broadcasted");
+  log.info(
+    { userId, cameraId, isFire, sentCount },
+    "📢 Fire detection broadcasted"
+  );
 }
 
 // -------------------------------------------------------------------
@@ -184,16 +205,31 @@ async function main() {
 
   // ✅ Check if USER_ID is set in env
   if (cfg.userId) {
-    log.info({ userId: cfg.userId }, "👤 USER_ID found in environment, starting detection");
+    log.info(
+      { userId: cfg.userId },
+      "👤 USER_ID found in environment, starting detection"
+    );
     currentUserId = cfg.userId;
-    
+
+    // Set all cameras to active for server startup
+    log.info(
+      { userId: cfg.userId },
+      "🔄 Setting all cameras to active for server startup"
+    );
+    await prisma.camera.updateMany({
+      where: { userId: currentUserId },
+      data: { isActive: true },
+    });
+
     const activeCameras = await prisma.camera.findMany({
       where: { userId: currentUserId, isActive: true },
       orderBy: { id: "asc" },
     });
 
     if (activeCameras.length > 0) {
-      log.info(`🎥 Starting LOCAL fire detection for ${activeCameras.length} camera(s)...`);
+      log.info(
+        `🎥 Starting LOCAL fire detection for ${activeCameras.length} camera(s)...`
+      );
       await startDetectionQueue(activeCameras);
       log.info("🔥 Local detection queue started successfully");
     } else {
@@ -201,7 +237,9 @@ async function main() {
     }
   } else {
     // ✅ No USER_ID set - wait for WebSocket connection to auto-detect
-    log.info("⏳ No USER_ID in environment - waiting for user to connect via WebSocket");
+    log.info(
+      "⏳ No USER_ID in environment - waiting for user to connect via WebSocket"
+    );
     log.info("💡 Detection will start automatically when user logs in");
   }
 
