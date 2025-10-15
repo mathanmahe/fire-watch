@@ -3,7 +3,15 @@ import { useCameras } from "../store/cameras.jsx";
 import StreamingIcon from "../components/StreamingIcon.jsx";
 import FireStatusButton from "../components/FireStatusButton.jsx";
 import AddCameraDialog from "../components/AddCameraDialog.jsx";
-import { FaEye, FaEyeSlash, FaEdit, FaTrash, FaSave, FaSearch, FaTimes } from "react-icons/fa";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaEdit,
+  FaTrash,
+  FaSave,
+  FaSearch,
+  FaTimes,
+} from "react-icons/fa";
 import { ImFire } from "react-icons/im";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { toggleTheme } from "../utils/theme.js";
@@ -20,7 +28,7 @@ const ViewingStatusIcon = ({ isVisible }) => {
 };
 
 export default function Status({ onNavigate, currentPage = "status" }) {
-  const { cameras } = useCameras();
+  const { cameras, deleteCamera } = useCameras();
   const { logout } = useAuth();
   const [showAdd, setShowAdd] = useState(false);
   const [theme, setTheme] = useState(
@@ -65,19 +73,35 @@ export default function Status({ onNavigate, currentPage = "status" }) {
     }));
   };
 
-  const handleDeleteClick = (cameraId) => {
+  const handleDeleteClick = async (cameraId) => {
     // Start animation
     setAnimatingOutIds((prev) => new Set([...prev, cameraId]));
 
-    // After animation completes, mark as deleted
-    setTimeout(() => {
-      setDeletedCameraIds((prev) => new Set([...prev, cameraId]));
+    try {
+      // Call API to delete camera
+      await deleteCamera(cameraId);
+
+      // After animation completes, mark as deleted
+      setTimeout(() => {
+        setDeletedCameraIds((prev) => new Set([...prev, cameraId]));
+        setAnimatingOutIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(cameraId);
+          return newSet;
+        });
+      }, 300); // Match CSS animation duration
+
+      console.log(`Camera ${cameraId} deleted successfully`);
+    } catch (error) {
+      console.error("Failed to delete camera:", error);
+      // Stop animation if deletion failed
       setAnimatingOutIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(cameraId);
         return newSet;
       });
-    }, 300); // Match CSS animation duration
+      alert(`Failed to delete camera: ${error.message}`);
+    }
   };
 
   // Filter and search cameras
@@ -274,133 +298,137 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                   </div>
                   <div className="modern-table-body">
                     {visibleCameras.map((c) => {
-                    const isEditing = editingCameraId === c.id;
-                    const isAnimatingOut = animatingOutIds.has(c.id);
+                      const isEditing = editingCameraId === c.id;
+                      const isAnimatingOut = animatingOutIds.has(c.id);
 
-                    return (
-                      <div
-                        key={c.id}
-                        className={`modern-table-row ${
-                          isAnimatingOut ? "deleting" : ""
-                        }`}
-                      >
-                        <div className="table-cell name-col">
-                          <span className="cell-label">Name</span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              className="edit-input"
-                              value={editedValues.name}
-                              onChange={(e) =>
-                                handleFieldChange("name", e.target.value)
-                              }
+                      return (
+                        <div
+                          key={c.id}
+                          className={`modern-table-row ${
+                            isAnimatingOut ? "deleting" : ""
+                          }`}
+                        >
+                          <div className="table-cell name-col">
+                            <span className="cell-label">Name</span>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="edit-input"
+                                value={editedValues.name}
+                                onChange={(e) =>
+                                  handleFieldChange("name", e.target.value)
+                                }
+                              />
+                            ) : (
+                              <span className="cell-value">{c.name}</span>
+                            )}
+                          </div>
+                          <div className="table-cell location-col">
+                            <span className="cell-label">Location</span>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="edit-input"
+                                value={editedValues.location}
+                                onChange={(e) =>
+                                  handleFieldChange("location", e.target.value)
+                                }
+                              />
+                            ) : (
+                              <span className="cell-value">{c.location}</span>
+                            )}
+                          </div>
+                          <div className="table-cell ip-col">
+                            <span className="cell-label">IP</span>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="edit-input"
+                                value={editedValues.ip}
+                                onChange={(e) =>
+                                  handleFieldChange("ip", e.target.value)
+                                }
+                              />
+                            ) : (
+                              <span className="cell-value">
+                                {c.ip || "N/A"}
+                              </span>
+                            )}
+                          </div>
+                          <div className="table-cell port-col">
+                            <span className="cell-label">Port</span>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="edit-input"
+                                value={editedValues.port}
+                                onChange={(e) =>
+                                  handleFieldChange("port", e.target.value)
+                                }
+                              />
+                            ) : (
+                              <span className="cell-value">
+                                {c.port || "N/A"}
+                              </span>
+                            )}
+                          </div>
+                          <div className="table-cell view-col">
+                            <span className="cell-label">View</span>
+                            <ViewingStatusIcon isVisible={c.isVisible} />
+                          </div>
+                          <div className="table-cell stream-col">
+                            <span className="cell-label">Stream</span>
+                            <StreamingIcon
+                              isStreaming={c.isStreaming}
+                              size={28}
                             />
-                          ) : (
-                            <span className="cell-value">{c.name}</span>
-                          )}
-                        </div>
-                        <div className="table-cell location-col">
-                          <span className="cell-label">Location</span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              className="edit-input"
-                              value={editedValues.location}
-                              onChange={(e) =>
-                                handleFieldChange("location", e.target.value)
-                              }
-                            />
-                          ) : (
-                            <span className="cell-value">{c.location}</span>
-                          )}
-                        </div>
-                        <div className="table-cell ip-col">
-                          <span className="cell-label">IP</span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              className="edit-input"
-                              value={editedValues.ip}
-                              onChange={(e) =>
-                                handleFieldChange("ip", e.target.value)
-                              }
-                            />
-                          ) : (
-                            <span className="cell-value">{c.ip || "N/A"}</span>
-                          )}
-                        </div>
-                        <div className="table-cell port-col">
-                          <span className="cell-label">Port</span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              className="edit-input"
-                              value={editedValues.port}
-                              onChange={(e) =>
-                                handleFieldChange("port", e.target.value)
-                              }
-                            />
-                          ) : (
-                            <span className="cell-value">
-                              {c.port || "N/A"}
-                            </span>
-                          )}
-                        </div>
-                        <div className="table-cell view-col">
-                          <span className="cell-label">View</span>
-                          <ViewingStatusIcon isVisible={c.isVisible} />
-                        </div>
-                        <div className="table-cell stream-col">
-                          <span className="cell-label">Stream</span>
-                          <StreamingIcon
-                            isStreaming={c.isStreaming}
-                            size={28}
-                          />
-                        </div>
-                        <div className="table-cell fire-col">
-                          <span className="cell-label">Fire</span>
-                          {c.isFire ? (
-                            <ImFire
-                              size={42}
-                              style={{
-                                color: "#ff0000",
-                                filter: "drop-shadow(0 0 0 1px #ff6600)",
-                              }}
-                            />
-                          ) : (
-                            <FireStatusButton isFire={false} />
-                          )}
-                        </div>
-                        <div className="table-cell actions-col">
-                          <span className="cell-label">Actions</span>
-                          <div className="action-buttons">
-                            <button
-                              className={`action-btn ${
-                                isEditing ? "save-btn" : "edit-btn"
-                              }`}
-                              onClick={() => handleEditClick(c)}
-                              title={isEditing ? "Save changes" : "Edit camera"}
-                            >
-                              {isEditing ? (
-                                <FaSave size={16} />
-                              ) : (
-                                <FaEdit size={16} />
-                              )}
-                            </button>
-                            <button
-                              className="action-btn delete-btn"
-                              onClick={() => handleDeleteClick(c.id)}
-                              title="Delete camera"
-                            >
-                              <FaTrash size={16} />
-                            </button>
+                          </div>
+                          <div className="table-cell fire-col">
+                            <span className="cell-label">Fire</span>
+                            {c.isFire ? (
+                              <ImFire
+                                size={42}
+                                style={{
+                                  color: "#ff0000",
+                                  filter: "drop-shadow(0 0 0 1px #ff6600)",
+                                }}
+                              />
+                            ) : (
+                              <FireStatusButton isFire={false} />
+                            )}
+                          </div>
+                          <div className="table-cell actions-col">
+                            <span className="cell-label">Actions</span>
+                            <div className="action-buttons">
+                              <button
+                                className={`action-btn ${
+                                  isEditing ? "save-btn" : "edit-btn"
+                                }`}
+                                onClick={() => handleEditClick(c)}
+                                title={
+                                  isEditing ? "Save changes" : "Edit camera"
+                                }
+                              >
+                                {isEditing ? (
+                                  <FaSave size={16} />
+                                ) : (
+                                  <FaEdit size={16} />
+                                )}
+                              </button>
+                              <button
+                                className="action-btn delete-btn"
+                                onClick={() => handleDeleteClick(c.id)}
+                                title="Delete camera"
+                              >
+                                <FaTrash size={16} />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
               )}
             </div>
           </div>

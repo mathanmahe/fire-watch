@@ -293,6 +293,44 @@ export function CamerasProvider({ children }) {
     []
   );
 
+  const deleteCamera = useMemo(
+    () => async (cameraId) => {
+      if (USE_SEED_DATA) {
+        // Seed mode: just update local state
+        setCameras((prev) => prev.filter((cam) => cam.id !== cameraId));
+        console.log("[Seed Mode] Deleted camera locally:", cameraId);
+      } else {
+        // DB mode: delete from database via API
+        try {
+          console.log("[DB Mode] Deleting camera from database:", cameraId);
+          await cameraApi.deleteCamera(cameraId);
+          console.log("[DB Mode] ✓ Camera deleted successfully");
+
+          // Remove from local state
+          setCameras((prev) => prev.filter((cam) => cam.id !== cameraId));
+
+          // Remove from visibility state
+          setCameraVisibility((prev) => {
+            const newVisibility = { ...prev };
+            delete newVisibility[cameraId];
+            return newVisibility;
+          });
+
+          // Remove from status state
+          setCameraStatuses((prev) => {
+            const newStatuses = { ...prev };
+            delete newStatuses[cameraId];
+            return newStatuses;
+          });
+        } catch (err) {
+          console.error("[DB Mode] ✗ Failed to delete camera:", err);
+          throw new Error("Failed to delete camera from database.");
+        }
+      }
+    },
+    []
+  );
+
   const camerasWithStatus = useMemo(
     () =>
       cameras.map((cam) => ({
@@ -314,6 +352,7 @@ export function CamerasProvider({ children }) {
       setCameraVisibilities,
       setCameraVisibilityById,
       resetAllCameraStatuses,
+      deleteCamera,
       loading,
       error,
       fetchCamerasFromDB,
@@ -327,6 +366,7 @@ export function CamerasProvider({ children }) {
       setCameraVisibilities,
       setCameraVisibilityById,
       resetAllCameraStatuses,
+      deleteCamera,
       loading,
       error,
     ]
