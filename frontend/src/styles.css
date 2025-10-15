@@ -1456,6 +1456,52 @@ body {
   font-weight: 500;
 }
 
+/* Start Detection Button */
+.start-detection-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--ok);
+  color: var(--on-bg);
+  border: 1px solid var(--ok);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.start-detection-btn:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--ok) 85%, black);
+  border-color: color-mix(in oklab, var(--ok) 85%, black);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.start-detection-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.start-detection-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.start-detection-btn.loading {
+  opacity: 0.8;
+}
+
+.start-detection-btn span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
 /* Light-only overrides for mini status panel (use the deep blue tastefully) */
 [data-theme="light"] .mini-status-panel {
   background: var(--surface);

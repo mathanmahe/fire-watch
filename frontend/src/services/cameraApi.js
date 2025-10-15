@@ -67,6 +67,13 @@ class CameraApiService {
       body: JSON.stringify({ cameraIds }),
     });
   }
+
+  async startDetectionForAllCameras(cameraIds) {
+    return this.request("/api/cameras/start-detection", {
+      method: "POST",
+      body: JSON.stringify({ cameraIds }),
+    });
+  }
 }
 
 export const cameraApi = new CameraApiService();

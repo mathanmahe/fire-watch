@@ -286,6 +286,13 @@ export function CamerasProvider({ children }) {
     []
   );
 
+  const resetAllCameraStatuses = useMemo(
+    () => () => {
+      setCameraStatuses({});
+    },
+    []
+  );
+
   const camerasWithStatus = useMemo(
     () =>
       cameras.map((cam) => ({
@@ -306,6 +313,7 @@ export function CamerasProvider({ children }) {
       toggleCameraVisibility,
       setCameraVisibilities,
       setCameraVisibilityById,
+      resetAllCameraStatuses,
       loading,
       error,
       fetchCamerasFromDB,
@@ -318,6 +326,7 @@ export function CamerasProvider({ children }) {
       toggleCameraVisibility,
       setCameraVisibilities,
       setCameraVisibilityById,
+      resetAllCameraStatuses,
       loading,
       error,
     ]
