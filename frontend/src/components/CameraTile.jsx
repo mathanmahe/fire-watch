@@ -518,6 +518,7 @@ import { playWebRTC } from "../utils/playWebRTC.js";
 import { useCameras } from "../store/cameras.jsx";
 import StreamingIcon from "./StreamingIcon.jsx";
 import FireStatusButton from "./FireStatusButton.jsx";
+import { getMediaMTXUrl } from "../config/electron.js";
 
 // We'll lazy-load your ESM VideoDetector class from utils directory
 let VideoDetectorClassPromise;
@@ -600,15 +601,16 @@ export default function CameraTile({ cam }) {
       updateStatus("Connecting…");
       try {
         if (cam.streamType === "WEBRTC") {
+          // Use localhost for Electron, LAN IP for browser
+          // const webrtcBase = getMediaMTXUrl(cam.webrtcBase);
+          const webrtcBase = cam.webrtcBase;
           console.log(`[${cam.name}] 🔗 Connecting to WebRTC:`, {
-            webrtcBase: cam.webrtcBase,
+            originalBase: cam.webrtcBase,
+            webrtcBase: webrtcBase,
             streamName: cam.streamName,
-            fullUrl: `${cam.webrtcBase}/${cam.streamName}/whep`
+            fullUrl: `${webrtcBase}/${cam.streamName}/whep`,
           });
-          const { pc, stream } = await playWebRTC(
-            cam.webrtcBase,
-            cam.streamName
-          );
+          const { pc, stream } = await playWebRTC(webrtcBase, cam.streamName);
           if (cancelled) {
             console.log(
               `[${cam.name}] Connection cancelled, closing PeerConnection`
@@ -726,7 +728,7 @@ export default function CameraTile({ cam }) {
           }
         } else if (cam.streamType === "HLS") {
           console.log(`[${cam.name}] 🔗 Connecting to HLS:`, {
-            hlsUrl: cam.hlsUrl
+            hlsUrl: cam.hlsUrl,
           });
           if (Hls.isSupported()) {
             hls = new Hls({ liveDurationInfinity: true });
@@ -742,7 +744,7 @@ export default function CameraTile({ cam }) {
           }
         } else if (cam.streamType === "MP4") {
           console.log(`[${cam.name}] 🔗 Connecting to MP4:`, {
-            url: cam.hlsUrl
+            url: cam.hlsUrl,
           });
           v.src = cam.hlsUrl;
           await v.play().catch(() => {});
@@ -923,14 +925,8 @@ export default function CameraTile({ cam }) {
       }
     }
 
-    // ✅ MODIFIED: Auto-connect if backend detected fire, OR always connect (original behavior)
-    if (backendFireDetected) {
-      console.log(`[${cam.name}] 🔥 Backend detected fire - auto-connecting to stream`);
-      attachStream().then(startDetection);
-    } else {
-      // ✅ KEEP ORIGINAL BEHAVIOR: Always attempt to connect and detect (for manual testing)
-      attachStream().then(startDetection);
-    }
+    // Only connect and start detection (don't check backendFireDetected here to avoid reconnections)
+    attachStream().then(startDetection);
 
     return () => {
       console.log(`[${cam.name}] Cleaning up...`);
@@ -1001,7 +997,7 @@ export default function CameraTile({ cam }) {
     cam.webrtcBase,
     cam.streamName,
     cam.detection,
-    backendFireDetected, // ✅ NEW: Add to dependencies
+    // NOTE: backendFireDetected NOT included to prevent reconnection on fire status change
   ]);
 
   // ✅ NEW: Combine backend fire detection with local/cloud detection for display
