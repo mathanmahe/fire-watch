@@ -1,9 +1,9 @@
 // frontend/src/utils/worker-client.js
 import * as ort from "onnxruntime-web";
 
-// Serve wasm from same-origin static path:
+// Serve wasm from same-origin static path
+// Workers don't have access to window, so use universal path
 ort.env.wasm.wasmPaths = "/models/ort/";
-
 // const sessionOptions = {
 //   executionProviders: ["cpu"], // Prioritize GPU (WebGL), then WASM, then CPU
 // };
@@ -33,11 +33,14 @@ const sessionOptions = { executionProviders: ["wasm"] };
 let sessionPromise;
 function getSession() {
   if (!sessionPromise) {
+    // Workers don't have access to window, use universal path
+    // Vite serves models/ as public dir, so this path works in both browser and Electron
+    const modelPath = "/yolov11n_bestFire.onnx";
+
     sessionPromise = ort.InferenceSession.create(
-      "/yolov11n_bestFire.onnx", // served from models/ at web root
+      modelPath,
       sessionOptions
     ).then((s) => {
-      // Helpful log to confirm model loaded
       console.log("[worker] ONNX session ready");
       return s;
     });

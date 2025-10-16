@@ -1,5 +1,6 @@
 // src/utils/websocketClient.js
 import { fetchAuthSession } from "aws-amplify/auth";
+import { getWebSocketUrl } from "../config/electron.js";
 
 let ws = null;
 let reconnectTimer = null;
@@ -25,9 +26,9 @@ export async function initWebSocket(onFireDetection) {
       return;
     }
 
-    const wsUrl =
-      import.meta.env.VITE_WS_URL ||
-      `ws://${window.location.hostname}:4000?token=${token}`;
+    // Get base WebSocket URL and append token
+    const baseWsUrl = getWebSocketUrl();
+    const wsUrl = `${baseWsUrl}?token=${token}`;
 
     console.log("🌐 Connecting to WebSocket:", wsUrl);
     ws = new WebSocket(wsUrl);
@@ -53,7 +54,10 @@ export async function initWebSocket(onFireDetection) {
 
     ws.onclose = (evt) => {
       console.warn("⚠️ WebSocket closed:", evt.code, evt.reason);
-      reconnectTimer = setTimeout(() => initWebSocket(onFireDetectionCallback), 5000);
+      reconnectTimer = setTimeout(
+        () => initWebSocket(onFireDetectionCallback),
+        5000
+      );
     };
 
     ws.onerror = (err) => {
