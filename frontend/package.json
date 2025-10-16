@@ -60,7 +60,10 @@
       {
         "from": "../backend",
         "to": "backend",
-        "filter": ["**/*", "!node_modules/**/*"]
+        "filter": [
+          "**/*",
+          "!node_modules/**/*"
+        ]
       },
       {
         "from": "../backend/node_modules",

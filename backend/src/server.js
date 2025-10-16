@@ -189,17 +189,26 @@ app.use(express.json({ limit: "5mb" }));
 // - Dev mode (npm run dev): Use relative path ../../frontend/dist
 // - Electron dev (npm run electron-dev): Use relative path ../../frontend/dist
 // - Electron production (dist): Backend runs from Resources/backend, frontend is in app.asar
-const isElectronProduction = process.env.ELECTRON && process.resourcesPath && __dirname.includes(process.resourcesPath);
+const isElectronProduction =
+  process.env.ELECTRON &&
+  process.resourcesPath &&
+  __dirname.includes(process.resourcesPath);
 let frontendDistPath;
 
 if (isElectronProduction) {
   // Production Electron build - frontend is in app.asar
   frontendDistPath = path.join(process.resourcesPath, "app.asar", "dist");
-  log.info({ frontendDistPath, resourcesPath: process.resourcesPath }, "📁 Electron production - serving from asar");
+  log.info(
+    { frontendDistPath, resourcesPath: process.resourcesPath },
+    "📁 Electron production - serving from asar"
+  );
 } else {
   // Development mode (both regular and electron-dev)
   frontendDistPath = path.join(__dirname, "../../frontend/dist");
-  log.info({ frontendDistPath, isElectron: !!process.env.ELECTRON }, "📁 Development mode");
+  log.info(
+    { frontendDistPath, isElectron: !!process.env.ELECTRON },
+    "📁 Development mode"
+  );
 }
 
 app.use(express.static(frontendDistPath));
@@ -216,7 +225,10 @@ app.get("*", (req, res) => {
   const indexPath = isElectronProduction
     ? path.join(process.resourcesPath, "app.asar", "dist", "index.html")
     : path.join(__dirname, "../../frontend/dist/index.html");
-  log.info({ indexPath, exists: require("fs").existsSync(indexPath) }, "📄 Serving index.html");
+  log.info(
+    { indexPath, exists: require("fs").existsSync(indexPath) },
+    "📄 Serving index.html"
+  );
   res.sendFile(indexPath);
 });
 
