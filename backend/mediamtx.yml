@@ -13,21 +13,17 @@ webrtcLocalUDPAddress: ':8189'
 webrtcLocalTCPAddress: ':8189'
 webrtcIPsFromInterfaces: false
 webrtcAdditionalHosts:
-  - 10.0.0.160
+  - 192.168.1.196
 rtsp: true
 rtspAddress: ':8554'
 readTimeout: 10s
 writeTimeout: 10s
 paths:
-  cam-1:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
-  cam-2:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
-  testcamera1:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
-  testcamera2:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
-  testcamera3:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
-  testcamera4:
-    source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
+  camera1:
+    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
+  camera2:
+    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
+  camera3:
+    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
+  camera5:
+    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main

@@ -60,7 +60,7 @@ export async function generateMediaMTXConfig() {
       sortKeys: false, // Keep original order
     });
 
-    const configPath = path.resolve(process.cwd(), "mediamtx.yml");
+    const configPath = outputPath || path.resolve(process.cwd(), "mediamtx.yml");
     await fs.writeFile(configPath, yamlString, "utf8");
 
     log.info(`MediaMTX config written to ${configPath}`);
