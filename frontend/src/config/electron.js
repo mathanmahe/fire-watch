@@ -24,7 +24,7 @@ export const getMediaMTXUrl = (webrtcBase) => {
     try {
       const url = new URL(webrtcBase);
       // Replace the hostname with 127.0.0.1 but keep the port
-      return `${url.protocol}//127.0.0.1:${url.port || '8889'}`;
+      return `${url.protocol}//127.0.0.1:${url.port || "8889"}`;
     } catch (e) {
       // Fallback if URL parsing fails
       return "http://127.0.0.1:8889";
