@@ -1,25 +1,79 @@
 {
-    "name": "firewatch-frontend",
-    "private": true,
-    "version": "0.1.0",
-    "type": "module",
-    "scripts": {
-        "dev": "vite --open",
-        "build": "vite build",
-        "preview": "vite preview"
+  "name": "firewatch-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron-pack": "npm run build && electron-builder",
+    "dist": "npm run build && electron-builder --publish=never"
+  },
+  "dependencies": {
+    "@aws-amplify/ui-react": "^6.13.0",
+    "aws-amplify": "^6.15.7",
+    "electron-is-dev": "^3.0.1",
+    "hls.js": "^1.5.8",
+    "onnxruntime-web": "^1.23.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.5.0",
+    "react-transition-group": "^4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.0",
+    "concurrently": "^9.1.2",
+    "electron": "^38.3.0",
+    "electron-builder": "^26.0.12",
+    "vite": "^5.4.0",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.firewatch.app",
+    "productName": "FireWatch",
+    "directories": {
+      "output": "dist-electron"
     },
-    "dependencies": {
-        "@aws-amplify/ui-react": "^6.13.0",
-        "aws-amplify": "^6.15.7",
-        "hls.js": "^1.5.8",
-        "onnxruntime-web": "^1.23.0",
-        "react": "^18.3.1",
-        "react-dom": "^18.3.1",
-        "react-icons": "^5.5.0",
-        "react-transition-group": "^4.4.5"
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "models/**/*",
+      "images/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "models",
+        "to": "models"
+      },
+      {
+        "from": "images",
+        "to": "images"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": "dmg",
+      "icon": "images/fire-icon.png"
     },
-    "devDependencies": {
-        "@vitejs/plugin-react": "^4.2.0",
-        "vite": "^5.4.0"
+    "win": {
+      "target": "nsis",
+      "icon": "images/fire-icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "images/fire-icon.png",
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
+  }
 }
