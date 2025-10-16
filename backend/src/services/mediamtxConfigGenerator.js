@@ -205,7 +205,7 @@ export function sanitizePathName(name) {
  * @returns {string} Server IP address
  */
 export function detectServerIP() {
-  // Check for environment variable override
+  // ✅ Prefer explicit override, then real LAN, then fall back to loopback
   const envIP = process.env.MEDIAMTX_SERVER_IP;
   if (envIP && envIP !== "auto") {
     log.info(`Using MEDIAMTX_SERVER_IP from environment: ${envIP}`);

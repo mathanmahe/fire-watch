@@ -17,6 +17,8 @@ const IMAGE_NAME = process.env.MEDIAMTX_IMAGE || "bluenviron/mediamtx:v1.14.0";
 const ICE_MIN = Number(process.env.MEDIAMTX_ICE_MIN || 8000);
 const ICE_MAX = Number(process.env.MEDIAMTX_ICE_MAX || 8100);
 
+const isElectron = process.env.ELECTRON === "true";
+
 export async function startMediaMTX() {
   // STEP 1: Generate MediaMTX config from database
   try {
@@ -151,6 +153,16 @@ async function createContainer({ configPath, haveConfig, isLinux }) {
   // Optional recordings directory
   if (process.env.MEDIAMTX_RECORDINGS_DIR) {
     binds.push(`${process.env.MEDIAMTX_RECORDINGS_DIR}:/recordings`);
+  }
+
+  // Electron-specific configuration
+  if (isElectron) {
+    // Ensure Docker is available
+    try {
+      await docker.ping();
+    } catch (error) {
+      throw new Error("Docker is not running. Please start Docker Desktop.");
+    }
   }
 
   // Prefer host network on Linux (no port mappings, best for WebRTC)
