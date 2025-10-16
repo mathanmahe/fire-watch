@@ -30,7 +30,10 @@ export async function playWebRTC(base, name) {
   // Connection state monitoring
   pc.onconnectionstatechange = () => {
     console.log(`[${name}] Connection state:`, pc.connectionState);
-    if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+    if (
+      pc.connectionState === "failed" ||
+      pc.connectionState === "disconnected"
+    ) {
       console.error(`[${name}] WebRTC connection ${pc.connectionState}`);
     }
   };
@@ -44,17 +47,27 @@ export async function playWebRTC(base, name) {
 
   // Better track handling - use the stream from MediaMTX
   pc.ontrack = (event) => {
-    console.log(`[${name}] Received track:`, event.track.kind, event.track.readyState);
-    event.track.onended = () => console.log(`[${name}] Track ended:`, event.track.kind);
+    console.log(
+      `[${name}] Received track:`,
+      event.track.kind,
+      event.track.readyState
+    );
+    event.track.onended = () =>
+      console.log(`[${name}] Track ended:`, event.track.kind);
 
     // Log track state changes
-    event.track.onmute = () => console.log(`[${name}] Track muted:`, event.track.kind);
-    event.track.onunmute = () => console.log(`[${name}] Track unmuted:`, event.track.kind);
+    event.track.onmute = () =>
+      console.log(`[${name}] Track muted:`, event.track.kind);
+    event.track.onunmute = () =>
+      console.log(`[${name}] Track unmuted:`, event.track.kind);
 
     // Use the MediaStream that comes from the server
     if (!remoteStream && event.streams && event.streams[0]) {
       remoteStream = event.streams[0];
-      console.log(`[${name}] Using remote stream from event, tracks:`, remoteStream.getTracks().length);
+      console.log(
+        `[${name}] Using remote stream from event, tracks:`,
+        remoteStream.getTracks().length
+      );
     }
   };
 
@@ -79,7 +92,9 @@ export async function playWebRTC(base, name) {
 
   try {
     await pc.setLocalDescription(await pc.createOffer());
-    await waitICE();
+    // await waitICE();
+    // Optional: wait a short moment for initial candidates, but don't require 'complete'
+    await new Promise((r) => setTimeout(r, 500)); // 500ms delay for initial candidates
 
     if (!pc.localDescription) {
       throw new Error("Failed to create local description");
@@ -94,7 +109,11 @@ export async function playWebRTC(base, name) {
     await new Promise((resolve) => {
       const checkStream = () => {
         if (remoteStream && remoteStream.getTracks().length > 0) {
-          console.log(`[${name}] Remote stream ready with ${remoteStream.getTracks().length} tracks`);
+          console.log(
+            `[${name}] Remote stream ready with ${
+              remoteStream.getTracks().length
+            } tracks`
+          );
           resolve();
         } else {
           setTimeout(checkStream, 100);
@@ -115,7 +134,12 @@ export async function playWebRTC(base, name) {
       throw new Error("Failed to receive remote stream from server");
     }
 
-    console.log(`[${name}] Final stream tracks:`, remoteStream.getTracks().map(t => `${t.kind} (${t.id}) - ${t.readyState}`));
+    console.log(
+      `[${name}] Final stream tracks:`,
+      remoteStream
+        .getTracks()
+        .map((t) => `${t.kind} (${t.id}) - ${t.readyState}`)
+    );
     return { pc, stream: remoteStream };
   } catch (error) {
     pc.close();
