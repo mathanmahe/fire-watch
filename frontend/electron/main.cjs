@@ -22,10 +22,9 @@ function createWindow() {
   });
 
   // Load the React app
-  const startUrl = isDev
-    ? "http://localhost:5173"
-    : `file://${path.join(__dirname, "../dist/index.html")}`;
+  const startUrl = isDev ? "http://localhost:5173" : "http://localhost:4000";
 
+  console.log("🔍 Loading URL:", startUrl);
   mainWindow.loadURL(startUrl);
 
   mainWindow.once("ready-to-show", () => {
@@ -40,10 +39,13 @@ function createWindow() {
 function startBackend() {
   const backendPath = isDev
     ? path.join(__dirname, "../../backend")
-    : path.join(__dirname, "backend");
+    : path.join(process.resourcesPath, "backend");
 
   const command = isDev ? "npm" : "node";
   const args = isDev ? ["run", "dev"] : ["src/server.js"];
+
+  console.log("🔍 Starting backend from:", backendPath);
+  console.log("🔍 Command:", command, args.join(" "));
 
   backendProcess = spawn(command, args, {
     cwd: backendPath,
@@ -53,6 +55,7 @@ function startBackend() {
       ...process.env,
       NODE_ENV: isDev ? "development" : "production",
       ELECTRON: "true", // Signal to backend that it's running in Electron
+      PORT: "4000", // Ensure backend uses port 4000
     },
   });
 

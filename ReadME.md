@@ -70,6 +70,16 @@
     ├── ReadME.md
 ```
 
+# Run full app
+
+`cd fireWatch/frontend`
+`npm run electron-dev`
+
+# Build for production
+
+`cd fireWatch/frontend`
+`npm run dist`
+
 # Run frontend
 
 ```
@@ -603,8 +613,7 @@ Workaround for now:
    paths
 2. Options:
 
-
-    - Option A: Require server restart (simple, matches your
+   - Option A: Require server restart (simple, matches your
 
 requirement) - Option B: Add a manual "Reload MediaMTX Config" endpoint
 that regenerates and restarts container - Option C (future): Use MediaMTX API to dynamically add

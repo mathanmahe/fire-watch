@@ -3,6 +3,8 @@ import { WebSocketServer } from "ws";
 import { createServer } from "http";
 import cors from "cors";
 import pino from "pino";
+import path from "path";
+import { fileURLToPath } from "url";
 import { cfg } from "./config.js";
 import { prisma } from "./db/prisma.js";
 import { requireAuth } from "./auth/cognitoVerify.js";
@@ -22,6 +24,10 @@ import {
 const log = pino({ name: "server" });
 const app = express();
 const httpServer = createServer(app);
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ✅ Track current user
 let currentUserId = cfg.userId || null;
@@ -178,12 +184,41 @@ app.use(
 );
 app.use(express.json({ limit: "5mb" }));
 
+// Serve static files from the frontend dist folder
+// Detection logic:
+// - Dev mode (npm run dev): Use relative path ../../frontend/dist
+// - Electron dev (npm run electron-dev): Use relative path ../../frontend/dist
+// - Electron production (dist): Backend runs from Resources/backend, frontend is in app.asar
+const isElectronProduction = process.env.ELECTRON && process.resourcesPath && __dirname.includes(process.resourcesPath);
+let frontendDistPath;
+
+if (isElectronProduction) {
+  // Production Electron build - frontend is in app.asar
+  frontendDistPath = path.join(process.resourcesPath, "app.asar", "dist");
+  log.info({ frontendDistPath, resourcesPath: process.resourcesPath }, "📁 Electron production - serving from asar");
+} else {
+  // Development mode (both regular and electron-dev)
+  frontendDistPath = path.join(__dirname, "../../frontend/dist");
+  log.info({ frontendDistPath, isElectron: !!process.env.ELECTRON }, "📁 Development mode");
+}
+
+app.use(express.static(frontendDistPath));
+
 app.get("/healthz", async (_req, res) => {
   res.json({ ok: true, mediamtx: await isMediaMTXRunning() });
 });
 
 app.use("/api", requireAuth);
 app.use("/api/cameras", camerasRouter);
+
+// Handle React Router (catch all handler for SPA)
+app.get("*", (req, res) => {
+  const indexPath = isElectronProduction
+    ? path.join(process.resourcesPath, "app.asar", "dist", "index.html")
+    : path.join(__dirname, "../../frontend/dist/index.html");
+  log.info({ indexPath, exists: require("fs").existsSync(indexPath) }, "📄 Serving index.html");
+  res.sendFile(indexPath);
+});
 
 // -------------------------------------------------------------------
 // 🚀 Main Entrypoint
