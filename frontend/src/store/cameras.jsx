@@ -180,9 +180,44 @@ export function CamerasProvider({ children }) {
     }
   }, []);
 
+  // Wait for backend to be ready before fetching cameras
+  const waitForBackend = async (maxWait = 30000) => {
+    const startTime = Date.now();
+    const checkInterval = 1000; // Check every 1 second
+
+    console.log("[DB Mode] ⏳ Waiting for backend to start...");
+
+    while (Date.now() - startTime < maxWait) {
+      try {
+        const response = await fetch("http://localhost:4000/healthz");
+        if (response.ok) {
+          console.log("[DB Mode] ✅ Backend is ready");
+          return true;
+        }
+      } catch (err) {
+        // Backend not ready yet, continue waiting
+      }
+      await new Promise((resolve) => setTimeout(resolve, checkInterval));
+    }
+
+    console.error("[DB Mode] ❌ Backend did not start in time");
+    return false;
+  };
+
   const fetchCamerasFromDB = async () => {
     setLoading(true);
     setError(null);
+    console.log("[DB Mode] Checking if backend is ready...");
+
+    // Wait for backend to be ready
+    const backendReady = await waitForBackend();
+
+    if (!backendReady) {
+      setError("Backend did not start in time. Please refresh the page.");
+      setLoading(false);
+      return;
+    }
+
     console.log("[DB Mode] Loading cameras from database...");
     try {
       const camerasFromDB = await cameraApi.getCameras();
