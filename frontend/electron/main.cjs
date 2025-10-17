@@ -90,9 +90,46 @@
 //   return { running: !!backendProcess };
 // });
 
-const { app, BrowserWindow, Menu, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, shell } = require("electron");
+const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
+
+// ✅ Logging setup
+function ensureDir(p) {
+  try {
+    fs.mkdirSync(p, { recursive: true });
+  } catch {}
+}
+
+function logPaths() {
+  // Electron exposes a per-app logs dir
+  const logsDir = app.getPath("logs"); // e.g. ~/Library/Logs/FireWatch
+  ensureDir(logsDir);
+  return {
+    dir: logsDir,
+    backend: path.join(logsDir, "backend.log"),
+    main: path.join(logsDir, "main.log"),
+  };
+}
+
+const LOG = logPaths();
+const mainLog = fs.createWriteStream(LOG.main, { flags: "a" });
+const stamp = () => new Date().toISOString();
+
+// write your main-process logs to file as well
+function mlog(...args) {
+  const line = `[${stamp()}] [main] ${args
+    .map((a) => (typeof a === "string" ? a : JSON.stringify(a)))
+    .join(" ")}\n`;
+  mainLog.write(line);
+  console.log(...args); // still visible in dev tools when running via npm
+}
+
+// (optional) add a menu/shortcut to open Logs folder:
+function openLogsFolder() {
+  shell.openPath(LOG.dir);
+}
 
 let mainWindow;
 let backendProcess;
@@ -100,8 +137,8 @@ let backendProcess;
 // ✅ FIX: Proper dev detection
 const isDev = !app.isPackaged;
 
-console.log("🔍 isDev:", isDev);
-console.log("🔍 app.isPackaged:", app.isPackaged);
+mlog("🔍 isDev:", isDev);
+mlog("🔍 app.isPackaged:", app.isPackaged);
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -120,13 +157,13 @@ function createWindow() {
 
   // ✅ FIX: Load from file in production, dev server in dev
   if (isDev) {
-    console.log("🔍 DEV MODE: Loading URL: http://localhost:5173");
+    mlog("🔍 DEV MODE: Loading URL: http://localhost:5173");
     mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
   } else {
     // ✅ PRODUCTION: Load from built files
     const indexPath = path.join(__dirname, "../dist/index.html");
-    console.log("🔍 PRODUCTION MODE: Loading file:", indexPath);
+    mlog("🔍 PRODUCTION MODE: Loading file:", indexPath);
     mainWindow.loadFile(indexPath);
 
     // ✅ Open DevTools for debugging (remove this later)
@@ -141,13 +178,13 @@ function createWindow() {
   mainWindow.webContents.on(
     "did-fail-load",
     (event, errorCode, errorDescription) => {
-      console.error("❌ Failed to load:", errorCode, errorDescription);
+      mlog("❌ Failed to load:", errorCode, errorDescription);
     }
   );
 
   // ✅ Log when page finishes loading
   mainWindow.webContents.on("did-finish-load", () => {
-    console.log("✅ Page loaded successfully");
+    mlog("✅ Page loaded successfully");
   });
 }
 
@@ -160,8 +197,8 @@ function startBackend() {
   const serverEntry = path.join(backendPath, "src", "server.js");
   const args = isDev ? ["run", "dev"] : [serverEntry];
 
-  console.log("🔍 Starting backend from:", backendPath);
-  console.log("🔍 Command:", command, args.join(" "));
+  mlog("🔍 Starting backend from:", backendPath);
+  mlog("🔍 Command:", command, args.join(" "));
 
   backendProcess = spawn(command, args, {
     cwd: backendPath,
@@ -176,22 +213,30 @@ function startBackend() {
     },
   });
 
-  // ✅ Log backend output
-  backendProcess.stdout.on("data", (data) => {
-    console.log("[Backend]", data.toString().trim());
+  // Pipe backend output to logs/backend.log
+  const backendLog = fs.createWriteStream(LOG.backend, { flags: "a" });
+  backendProcess.stdout.on("data", (buf) => {
+    backendLog.write(`[${stamp()}] [backend:stdout] ${buf}`);
+    console.log("[Backend]", buf.toString().trim()); // still show in console
   });
-
-  backendProcess.stderr.on("data", (data) => {
-    console.error("[Backend Error]", data.toString().trim());
+  backendProcess.stderr.on("data", (buf) => {
+    backendLog.write(`[${stamp()}] [backend:stderr] ${buf}`);
+    console.error("[Backend Error]", buf.toString().trim()); // still show in console
   });
 
   backendProcess.on("error", (err) => {
-    console.error("❌ Backend process error:", err);
+    const line = `[${stamp()}] [backend:error] ${err.stack || err}\n`;
+    backendLog.write(line);
+    mlog("backend spawn error", err);
   });
 
-  backendProcess.on("exit", (code) => {
-    console.log("🛑 Backend exited with code:", code);
+  backendProcess.on("exit", (code, signal) => {
+    const line = `[${stamp()}] [backend:exit] code=${code} signal=${signal}\n`;
+    backendLog.write(line);
+    mlog("backend exited", { code, signal });
   });
+
+  mlog("Backend started. Logs:", LOG);
 }
 
 app.whenReady().then(() => {

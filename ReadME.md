@@ -106,6 +106,19 @@ npm run dev
 
 To stream some sample videos in the videos dir onto cameras 3-7
 
+# MACOS debugging
+
+```
+tail -f ~/Library/Logs/firewatch-frontend/backend.log
+
+ls -la /Applications/FireWatch.app/Contents/Resources/backend/
+/Applications/FireWatch.app/Contents/MacOS/FireWatch 2>&1 | tee ~/Desktop/electron-startup.log
+```
+
+```
+Finder: ~/Library/Logs/firewatch-frontend/backend.log and main.log
+```
+
 # FireWatch: File Detailed Directory Description
 
 ## frontend/
