@@ -73,7 +73,9 @@
     "mac": {
       "category": "public.app-category.utilities",
       "target": "dmg",
-      "icon": "images/fire-icon.png"
+      "icon": "images/fire-icon.png",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "win": {
       "target": "nsis",

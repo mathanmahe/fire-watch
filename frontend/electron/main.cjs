@@ -128,7 +128,7 @@ function createWindow() {
     const indexPath = path.join(__dirname, "../dist/index.html");
     console.log("🔍 PRODUCTION MODE: Loading file:", indexPath);
     mainWindow.loadFile(indexPath);
-    
+
     // ✅ Open DevTools for debugging (remove this later)
     mainWindow.webContents.openDevTools();
   }
@@ -138,9 +138,12 @@ function createWindow() {
   });
 
   // ✅ Log load failures
-  mainWindow.webContents.on("did-fail-load", (event, errorCode, errorDescription) => {
-    console.error("❌ Failed to load:", errorCode, errorDescription);
-  });
+  mainWindow.webContents.on(
+    "did-fail-load",
+    (event, errorCode, errorDescription) => {
+      console.error("❌ Failed to load:", errorCode, errorDescription);
+    }
+  );
 
   // ✅ Log when page finishes loading
   mainWindow.webContents.on("did-finish-load", () => {
@@ -153,8 +156,9 @@ function startBackend() {
     ? path.join(__dirname, "../../backend")
     : path.join(process.resourcesPath, "backend");
 
-  const command = isDev ? "npm" : "node";
-  const args = isDev ? ["run", "dev"] : ["src/server.js"];
+  const command = isDev ? "npm" : process.execPath;
+  const serverEntry = path.join(backendPath, "src", "server.js");
+  const args = isDev ? ["run", "dev"] : [serverEntry];
 
   console.log("🔍 Starting backend from:", backendPath);
   console.log("🔍 Command:", command, args.join(" "));
@@ -162,11 +166,12 @@ function startBackend() {
   backendProcess = spawn(command, args, {
     cwd: backendPath,
     stdio: ["ignore", "pipe", "pipe"], // ✅ Changed to capture output
-    shell: true,
+    shell: false, // ← not needed when using execPath
     env: {
       ...process.env,
       NODE_ENV: isDev ? "development" : "production",
-      ELECTRON: "true",
+      ELECTRON: "true", // server.js uses this to detect prod-asar
+      ELECTRON_RUN_AS_NODE: "1", // run Electron as plain Node
       PORT: "4000",
     },
   });

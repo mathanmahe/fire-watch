@@ -10,9 +10,10 @@ const log = pino({ name: "mediamtx-config-generator" });
 
 /**
  * Generates mediamtx.yml configuration file dynamically from database cameras
+ * @param {string} outputPath - Optional path where to write the config file
  * @returns {Promise<{serverIP: string, camerasCount: number}>} Generation result
  */
-export async function generateMediaMTXConfig() {
+export async function generateMediaMTXConfig(outputPath) {
   log.info("Starting MediaMTX config generation...");
 
   console.log("🔍 mediamtxConfigGenerator - cfg:", cfg);
@@ -60,7 +61,8 @@ export async function generateMediaMTXConfig() {
       sortKeys: false, // Keep original order
     });
 
-    const configPath = outputPath || path.resolve(process.cwd(), "mediamtx.yml");
+    const configPath =
+      outputPath || path.resolve(process.cwd(), "mediamtx.yml");
     await fs.writeFile(configPath, yamlString, "utf8");
 
     log.info(`MediaMTX config written to ${configPath}`);
