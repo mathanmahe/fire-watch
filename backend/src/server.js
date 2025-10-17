@@ -83,6 +83,17 @@ wss.on("connection", async (ws, req) => {
           { userId, count: userCameras.length },
           "🎥 Starting detection for new user's cameras"
         );
+        
+        // ✅ ADD THIS: Regenerate MediaMTX config for new user
+        try {
+          log.info("🔄 Regenerating MediaMTX config for new user...");
+          await stopMediaMTX();
+          await startMediaMTX();
+          log.info("✅ MediaMTX restarted with new user's cameras");
+        } catch (err) {
+          log.error({ error: err.message }, "❌ Failed to restart MediaMTX");
+        }
+        
         await startDetectionQueue(userCameras);
       } else {
         log.warn({ userId }, "⚠️ No cameras found for this user");

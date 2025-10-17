@@ -200,15 +200,28 @@ function startBackend() {
   mlog("🔍 Starting backend from:", backendPath);
   mlog("🔍 Command:", command, args.join(" "));
 
+  // ✅ FIX: Build proper PATH with common binary locations
+  const systemPaths = [
+    '/usr/local/bin',
+    '/usr/bin',
+    '/bin',
+    '/opt/homebrew/bin',
+    '/opt/local/bin',
+  ];
+  
+  const currentPath = process.env.PATH || '';
+  const newPath = [...systemPaths, ...currentPath.split(':')].filter(Boolean).join(':');
+
   backendProcess = spawn(command, args, {
     cwd: backendPath,
-    stdio: ["ignore", "pipe", "pipe"], // ✅ Changed to capture output
-    shell: false, // ← not needed when using execPath
+    stdio: ["ignore", "pipe", "pipe"],
+    shell: false,
     env: {
       ...process.env,
+      PATH: newPath, // ✅ This gives backend access to system ffmpeg
       NODE_ENV: isDev ? "development" : "production",
-      ELECTRON: "true", // server.js uses this to detect prod-asar
-      ELECTRON_RUN_AS_NODE: "1", // run Electron as plain Node
+      ELECTRON: "true",
+      ELECTRON_RUN_AS_NODE: "1",
       PORT: "4000",
     },
   });
@@ -217,11 +230,11 @@ function startBackend() {
   const backendLog = fs.createWriteStream(LOG.backend, { flags: "a" });
   backendProcess.stdout.on("data", (buf) => {
     backendLog.write(`[${stamp()}] [backend:stdout] ${buf}`);
-    console.log("[Backend]", buf.toString().trim()); // still show in console
+    console.log("[Backend]", buf.toString().trim());
   });
   backendProcess.stderr.on("data", (buf) => {
     backendLog.write(`[${stamp()}] [backend:stderr] ${buf}`);
-    console.error("[Backend Error]", buf.toString().trim()); // still show in console
+    console.error("[Backend Error]", buf.toString().trim());
   });
 
   backendProcess.on("error", (err) => {
@@ -237,6 +250,7 @@ function startBackend() {
   });
 
   mlog("Backend started. Logs:", LOG);
+  mlog("Backend PATH:", newPath);
 }
 
 app.whenReady().then(() => {
