@@ -835,10 +835,13 @@ export default function CameraTile({ cam }) {
 
         // Start the detector (spawn worker and bind video loop)
         // DON'T call attachWebRTC or start() since we're manually managing video/canvas
+        // vite ignore is important to prevent build errors due to dynamic name
         if (!d._worker) {
           // Spawn worker
-          const url = new URL("../utils/worker-client.js", import.meta.url);
-          d._worker = new Worker(url, { type: "module", name: cam.name });
+          d._worker = new Worker(
+            new URL("../utils/worker-client.js", import.meta.url),
+            /* @vite-ignore */ { type: "module", name: cam.name }
+          );
 
           d._worker.onmessage = (evt) => {
             const output = evt.data;

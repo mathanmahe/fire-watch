@@ -16,5 +16,7 @@ export default defineConfig({
   build: {
     outDir: "dist",
     assetsDir: "assets",
+    assetsInlineLimit: 20_000_000, // 20MB
+    assetsInclude: ["**/*.onnx"],
   },
 });
