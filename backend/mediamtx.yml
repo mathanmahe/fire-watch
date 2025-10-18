@@ -25,7 +25,5 @@ paths:
     source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
   camera3:
     source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
-  camera4_:
-    source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main
   camera5:
     source: rtsp://admin:CCTVCheck%40123@192.168.1.201:554/h264Preview_01_main

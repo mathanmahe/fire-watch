@@ -251,11 +251,13 @@ export class VideoDetector {
     });
     console.log(`[${this.id}] using MP4 fallback`);
   }
-
+  // vite ignore is important to prevent build errors due to dynamic name
   _spawnWorker() {
     try {
-      const url = new URL("./worker-client.js", import.meta.url);
-      this._worker = new Worker(url, { type: "module", name: this.id });
+      this._worker = new Worker(
+        new URL("../utils/worker-client.js", import.meta.url),
+        /* @vite-ignore */ { type: "module", name: this.id }
+      );
 
       this._worker.onmessage = (evt) => {
         const output = evt.data;
@@ -511,9 +513,18 @@ export class VideoDetector {
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
       ctx.fillStyle = "#00FF00";
       const w = ctx.measureText(label).width;
-      ctx.fillRect(x1, Math.max(0, y1 - labelHeight), w + labelPadding * 2, labelHeight);
+      ctx.fillRect(
+        x1,
+        Math.max(0, y1 - labelHeight),
+        w + labelPadding * 2,
+        labelHeight
+      );
       ctx.fillStyle = "#000";
-      ctx.fillText(label, x1 + labelPadding, Math.max(fontSize, y1 - labelPadding));
+      ctx.fillText(
+        label,
+        x1 + labelPadding,
+        Math.max(fontSize, y1 - labelPadding)
+      );
     });
     ctx.restore();
   }

@@ -3,29 +3,53 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import pino from "pino";
+import os from "node:os";
 import { cfg } from "../config.js";
 import { generateMediaMTXConfig } from "./mediamtxConfigGenerator.js";
 
 const log = pino({ name: "mediamtx" });
-const docker = new Docker(); // defaults to /var/run/docker.sock
+const docker = new Docker();
 
 let container = null;
 const CONTAINER_NAME = "mediamtx-firewatch";
 const IMAGE_NAME = process.env.MEDIAMTX_IMAGE || "bluenviron/mediamtx:v1.14.0";
 
-// Allow override via env, else default to 8000-8100
-const ICE_MIN = Number(process.env.MEDIAMTX_ICE_MIN || 8000);
-const ICE_MAX = Number(process.env.MEDIAMTX_ICE_MAX || 8100);
+// ✅ FIX: Use user data directory for config when running in Electron
+function getConfigPath() {
+  const isElectron = process.env.ELECTRON === 'true';
+  
+  if (isElectron) {
+    // ✅ Use user's home directory for Electron
+    const userDataPath = path.join(os.homedir(), '.firewatch');
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true });
+      log.info({ path: userDataPath }, "Created FireWatch user data directory");
+    }
+    
+    return path.join(userDataPath, 'mediamtx.yml');
+  } else {
+    // ✅ Use project directory for normal mode
+    const rawPath = cfg.mediamtx?.config || "./mediamtx.yml";
+    return path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
+  }
+}
 
 export async function startMediaMTX() {
-  // STEP 1: Generate MediaMTX config from database
+  // STEP 1: Generate MediaMTX config
   try {
     log.info("Generating MediaMTX configuration from database...");
-    const result = await generateMediaMTXConfig();
+    
+    // ✅ Generate config in accessible location
+    const configPath = getConfigPath();
+    const result = await generateMediaMTXConfig(configPath);
+    
     log.info(
       {
         serverIP: result.serverIP,
         camerasCount: result.camerasCount,
+        configPath: configPath,
       },
       "MediaMTX config generated successfully"
     );
@@ -37,11 +61,12 @@ export async function startMediaMTX() {
   }
 
   // STEP 2: Resolve config path
-  const rawPath = cfg.mediamtx?.config || "./mediamtx.yml";
-  const configPath = path.isAbsolute(rawPath)
-    ? rawPath
-    : path.resolve(process.cwd(), rawPath);
+  const configPath = getConfigPath();
   const haveConfig = fs.existsSync(configPath);
+
+  if (!haveConfig) {
+    log.warn({ configPath }, "MediaMTX config not found");
+  }
 
   // STEP 3: Check if container is already running
   const existing = await getExistingContainer();
@@ -57,7 +82,7 @@ export async function startMediaMTX() {
   const isLinux = process.platform === "linux";
   container = await createContainer({ configPath, haveConfig, isLinux });
   await container.start();
-  log.info("MediaMTX container started");
+  log.info({ configPath }, "MediaMTX container started");
 
   // Wait until HTTP port answers
   const timeout = Number(process.env.MEDIAMTX_READY_TIMEOUT_MS || 20000);
@@ -71,6 +96,7 @@ export async function startMediaMTX() {
   return container;
 }
 
+// Rest of the file stays the same...
 export async function stopMediaMTX() {
   const existing = await getExistingContainer();
   if (!existing) return;
@@ -103,14 +129,12 @@ async function isContainerRunning(c) {
 }
 
 async function pullImageIfNeeded() {
-  // Check locally first
   try {
     await docker.getImage(IMAGE_NAME).inspect();
     log.info(`MediaMTX image ${IMAGE_NAME} already present locally`);
     return;
   } catch {}
 
-  // Pull if not present
   log.info(`Pulling MediaMTX image ${IMAGE_NAME}...`);
   return new Promise((resolve, reject) => {
     docker.pull(IMAGE_NAME, (err, stream) => {
@@ -118,7 +142,6 @@ async function pullImageIfNeeded() {
       docker.modem.followProgress(
         stream,
         (err2) => (err2 ? reject(err2) : resolve()),
-        // progress events optional
         (event) => {
           if (event?.status) log.info(event.status);
         }
@@ -133,27 +156,26 @@ function makePortMaps() {
     "8889/tcp": {},
     "8554/tcp": {},
     "8189/udp": {},
-    "8189/tcp": {}, // WebRTC TCP fallback
+    "8189/tcp": {},
   };
   const bindings = {
     "8888/tcp": [{ HostPort: "8888" }],
     "8889/tcp": [{ HostPort: "8889" }],
-    "8554/tcp": [{ HostPort: "8554" }], // optional if you don't need RTSP ingress
+    "8554/tcp": [{ HostPort: "8554" }],
     "8189/udp": [{ HostPort: "8189" }],
-    "8189/tcp": [{ HostPort: "8189" }], // WebRTC TCP fallback
+    "8189/tcp": [{ HostPort: "8189" }],
   };
   return { exposed, bindings };
 }
 
 async function createContainer({ configPath, haveConfig, isLinux }) {
   const binds = [];
-  if (haveConfig) binds.push(`${configPath}:/mediamtx.yml:ro,z`);
-  // Optional recordings directory
+  if (haveConfig) binds.push(`${configPath}:/mediamtx.yml:ro`);
+
   if (process.env.MEDIAMTX_RECORDINGS_DIR) {
     binds.push(`${process.env.MEDIAMTX_RECORDINGS_DIR}:/recordings`);
   }
 
-  // Prefer host network on Linux (no port mappings, best for WebRTC)
   if (isLinux && process.env.MEDIAMTX_NETWORK_MODE !== "bridge") {
     return docker.createContainer({
       name: CONTAINER_NAME,
@@ -164,11 +186,9 @@ async function createContainer({ configPath, haveConfig, isLinux }) {
         RestartPolicy: { Name: "unless-stopped" },
         Binds: binds,
       },
-      // no ExposedPorts/PortBindings needed in host mode
     });
   }
 
-  // Cross-platform fallback: enumerate ports
   const { exposed, bindings } = makePortMaps();
   return docker.createContainer({
     name: CONTAINER_NAME,

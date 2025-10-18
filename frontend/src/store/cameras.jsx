@@ -180,9 +180,44 @@ export function CamerasProvider({ children }) {
     }
   }, []);
 
+  // Wait for backend to be ready before fetching cameras
+  const waitForBackend = async (maxWait = 30000) => {
+    const startTime = Date.now();
+    const checkInterval = 1000; // Check every 1 second
+
+    console.log("[DB Mode] ⏳ Waiting for backend to start...");
+
+    while (Date.now() - startTime < maxWait) {
+      try {
+        const response = await fetch("http://localhost:4000/healthz");
+        if (response.ok) {
+          console.log("[DB Mode] ✅ Backend is ready");
+          return true;
+        }
+      } catch (err) {
+        // Backend not ready yet, continue waiting
+      }
+      await new Promise((resolve) => setTimeout(resolve, checkInterval));
+    }
+
+    console.error("[DB Mode] ❌ Backend did not start in time");
+    return false;
+  };
+
   const fetchCamerasFromDB = async () => {
     setLoading(true);
     setError(null);
+    console.log("[DB Mode] Checking if backend is ready...");
+
+    // Wait for backend to be ready
+    const backendReady = await waitForBackend();
+
+    if (!backendReady) {
+      setError("Backend did not start in time. Please refresh the page.");
+      setLoading(false);
+      return;
+    }
+
     console.log("[DB Mode] Loading cameras from database...");
     try {
       const camerasFromDB = await cameraApi.getCameras();
@@ -286,6 +321,51 @@ export function CamerasProvider({ children }) {
     []
   );
 
+  const resetAllCameraStatuses = useMemo(
+    () => () => {
+      setCameraStatuses({});
+    },
+    []
+  );
+
+  const deleteCamera = useMemo(
+    () => async (cameraId) => {
+      if (USE_SEED_DATA) {
+        // Seed mode: just update local state
+        setCameras((prev) => prev.filter((cam) => cam.id !== cameraId));
+        console.log("[Seed Mode] Deleted camera locally:", cameraId);
+      } else {
+        // DB mode: delete from database via API
+        try {
+          console.log("[DB Mode] Deleting camera from database:", cameraId);
+          await cameraApi.deleteCamera(cameraId);
+          console.log("[DB Mode] ✓ Camera deleted successfully");
+
+          // Remove from local state
+          setCameras((prev) => prev.filter((cam) => cam.id !== cameraId));
+
+          // Remove from visibility state
+          setCameraVisibility((prev) => {
+            const newVisibility = { ...prev };
+            delete newVisibility[cameraId];
+            return newVisibility;
+          });
+
+          // Remove from status state
+          setCameraStatuses((prev) => {
+            const newStatuses = { ...prev };
+            delete newStatuses[cameraId];
+            return newStatuses;
+          });
+        } catch (err) {
+          console.error("[DB Mode] ✗ Failed to delete camera:", err);
+          throw new Error("Failed to delete camera from database.");
+        }
+      }
+    },
+    []
+  );
+
   const camerasWithStatus = useMemo(
     () =>
       cameras.map((cam) => ({
@@ -306,6 +386,8 @@ export function CamerasProvider({ children }) {
       toggleCameraVisibility,
       setCameraVisibilities,
       setCameraVisibilityById,
+      resetAllCameraStatuses,
+      deleteCamera,
       loading,
       error,
       fetchCamerasFromDB,
@@ -318,6 +400,8 @@ export function CamerasProvider({ children }) {
       toggleCameraVisibility,
       setCameraVisibilities,
       setCameraVisibilityById,
+      resetAllCameraStatuses,
+      deleteCamera,
       loading,
       error,
     ]

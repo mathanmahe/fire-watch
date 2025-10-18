@@ -2,13 +2,21 @@ import React, { useState } from "react";
 import { useCameras } from "../store/cameras.jsx";
 import StreamingIcon from "./StreamingIcon.jsx";
 import FireStatusButton from "./FireStatusButton.jsx";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaStopCircle, FaPlayCircle } from "react-icons/fa";
 import { ImFire } from "react-icons/im";
+import { cameraApi } from "../services/cameraApi.js";
 
 export default function MiniStatusPanel({ viewMode = "grid" }) {
-  const { cameras, toggleCameraVisibility, setCameraVisibilities } =
-    useCameras();
+  const {
+    cameras,
+    toggleCameraVisibility,
+    setCameraVisibilities,
+    resetAllCameraStatuses,
+  } = useCameras();
   const [filter, setFilter] = useState("all");
+  const [isStoppingDetection, setIsStoppingDetection] = useState(false);
+  const [isStartingDetection, setIsStartingDetection] = useState(false);
+  const [detectionRunning, setDetectionRunning] = useState(true); // Assume detection starts running
 
   const handleFilterChange = (newFilter) => {
     // Toggle off if clicking the same filter
@@ -32,6 +40,63 @@ export default function MiniStatusPanel({ viewMode = "grid" }) {
     });
 
     setCameraVisibilities(visibilityMap);
+  };
+
+  const handleStopDetection = async () => {
+    if (isStoppingDetection || cameras.length === 0) return;
+
+    setIsStoppingDetection(true);
+    try {
+      const cameraIds = cameras.map((cam) => cam.id);
+      const response = await cameraApi.stopDetectionForAllCameras(cameraIds);
+      console.log("Stop detection response:", response);
+
+      // Hide all cameras after stopping detection
+      const hideAllCameras = {};
+      cameras.forEach((cam) => {
+        hideAllCameras[cam.id] = false;
+      });
+      setCameraVisibilities(hideAllCameras);
+
+      // Reset all camera statuses (isFire and isStreaming to false)
+      resetAllCameraStatuses();
+
+      setDetectionRunning(false);
+
+      // Show success message or handle response
+      alert(
+        `Successfully stopped detection for ${response.stopped.length} camera(s)`
+      );
+    } catch (error) {
+      console.error("Failed to stop detection:", error);
+      alert(`Failed to stop detection: ${error.message}`);
+    } finally {
+      setIsStoppingDetection(false);
+    }
+  };
+
+  const handleStartDetection = async () => {
+    if (isStartingDetection || cameras.length === 0) return;
+
+    setIsStartingDetection(true);
+    try {
+      const cameraIds = cameras.map((cam) => cam.id);
+      const response = await cameraApi.startDetectionForAllCameras(cameraIds);
+      console.log("Start detection response:", response);
+
+      // Update detection state
+      setDetectionRunning(true);
+
+      // Show success message
+      alert(
+        `Successfully started detection for ${response.started.length} camera(s)`
+      );
+    } catch (error) {
+      console.error("Failed to start detection:", error);
+      alert(`Failed to start detection: ${error.message}`);
+    } finally {
+      setIsStartingDetection(false);
+    }
   };
 
   const isDisabled = viewMode === "single";
@@ -129,6 +194,39 @@ export default function MiniStatusPanel({ viewMode = "grid" }) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Stop Detection Button */}
+      <div className="stop-detection-section">
+        {detectionRunning ? (
+          <button
+            className={`stop-detection-btn ${
+              isStoppingDetection ? "loading" : ""
+            }`}
+            onClick={handleStopDetection}
+            disabled={isStoppingDetection || cameras.length === 0}
+            title="Stop fire detection for all cameras"
+          >
+            <FaStopCircle size={20} />
+            <span>
+              {isStoppingDetection ? "Stopping..." : "Stop Detection"}
+            </span>
+          </button>
+        ) : (
+          <button
+            className={`start-detection-btn ${
+              isStartingDetection ? "loading" : ""
+            }`}
+            onClick={handleStartDetection}
+            disabled={isStartingDetection || cameras.length === 0}
+            title="Start fire detection for all cameras"
+          >
+            <FaPlayCircle size={20} />
+            <span>
+              {isStartingDetection ? "Starting..." : "Start Detection"}
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

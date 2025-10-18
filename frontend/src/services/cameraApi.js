@@ -1,5 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+// const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 
+import { getBackendUrl } from "../config/electron.js";
+
+const API_BASE = getBackendUrl();
 class CameraApiService {
   constructor() {
     this.token = null;
@@ -58,6 +61,20 @@ class CameraApiService {
   async deleteCamera(id) {
     return this.request(`/api/cameras/${id}`, {
       method: "DELETE",
+    });
+  }
+
+  async stopDetectionForAllCameras(cameraIds) {
+    return this.request("/api/cameras/stop-detection", {
+      method: "POST",
+      body: JSON.stringify({ cameraIds }),
+    });
+  }
+
+  async startDetectionForAllCameras(cameraIds) {
+    return this.request("/api/cameras/start-detection", {
+      method: "POST",
+      body: JSON.stringify({ cameraIds }),
     });
   }
 }

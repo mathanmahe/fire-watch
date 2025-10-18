@@ -6,58 +6,75 @@ const log = pino({ name: "stream-manager" });
 const activeStreams = new Map();
 
 // -------------------------------------------------------------------
-// ▶️ Start Camera Stream (OPTIMIZED FOR LOW LATENCY)
+// DEPRECATED - start camera stream is handled in the frontend
 // -------------------------------------------------------------------
 export async function startCameraStream(camera) {
   if (activeStreams.has(camera.id)) {
-    log.warn({ cameraId: camera.id, name: camera.name }, "Stream already active");
+    log.warn(
+      { cameraId: camera.id, name: camera.name },
+      "Stream already active"
+    );
     return;
   }
 
   try {
-    log.info({ cameraId: camera.id, name: camera.name }, "▶️ Starting camera stream");
+    log.info(
+      { cameraId: camera.id, name: camera.name },
+      "▶️ Starting camera stream"
+    );
 
     // Build source URL from REAL camera
     const sourceUrl = buildSourceUrl(camera);
-    
-    // Build MediaMTX destination
-    const streamName = camera.streamName || camera.name.replace(/\s+/g, "_").toLowerCase();
-    const destUrl = `rtsp://localhost:8554/${streamName}`;
 
-    log.info({ 
-      cameraId: camera.id,
-      source: sourceUrl.replace(/:([^:@]+)@/, ":****@"),
-      destination: destUrl 
-    }, "Stream URLs");
+    // Build MediaMTX destination - use different path to avoid conflict with MediaMTX source
+    const streamName =
+      camera.streamName || camera.name.replace(/\s+/g, "_").toLowerCase();
+    const destUrl = `rtsp://localhost:8554/${streamName}-fire`; // Add -fire suffix to avoid conflict
+
+    log.info(
+      {
+        cameraId: camera.id,
+        source: sourceUrl.replace(/:([^:@]+)@/, ":****@"),
+        destination: destUrl,
+      },
+      "Stream URLs"
+    );
 
     const isHLS = sourceUrl.includes(".m3u8");
 
-// ✅ SIMPLIFIED FFMPEG ARGS for better reliability
-const ffmpegArgs = ["-y"];
+    // ✅ SIMPLIFIED FFMPEG ARGS for better reliability
+    const ffmpegArgs = ["-y"];
 
-if (!isHLS) {
-  // RTSP source - SIMPLIFIED
-  ffmpegArgs.push(
-    "-rtsp_transport", "tcp",
-    "-i", sourceUrl,
-    "-c:v", "copy",           // Just copy, no re-encoding
-    "-an",                    // ✅ Drop audio to reduce load
-    "-f", "rtsp",
-    destUrl
-  );
-} else {
-  // HLS source
-  ffmpegArgs.push(
-    "-i", sourceUrl,
-    "-c:v", "copy",
-    "-an",                    // ✅ Drop audio to reduce load
-    "-f", "rtsp",
-    destUrl
-  );
-}
+    if (!isHLS) {
+      // RTSP source - SIMPLIFIED
+      ffmpegArgs.push(
+        "-rtsp_transport",
+        "tcp",
+        "-i",
+        sourceUrl,
+        "-c:v",
+        "copy", // Just copy, no re-encoding
+        "-an", // ✅ Drop audio to reduce load
+        "-f",
+        "rtsp",
+        destUrl
+      );
+    } else {
+      // HLS source
+      ffmpegArgs.push(
+        "-i",
+        sourceUrl,
+        "-c:v",
+        "copy",
+        "-an", // ✅ Drop audio to reduce load
+        "-f",
+        "rtsp",
+        destUrl
+      );
+    }
 
     const streamProcess = spawn(cfg.ffmpeg, ffmpegArgs, {
-      stdio: ["ignore", "pipe", "pipe"]
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
     let stderr = "";
@@ -66,27 +83,36 @@ if (!isHLS) {
     });
 
     streamProcess.on("error", (error) => {
-      log.error({ 
-        cameraId: camera.id, 
-        name: camera.name,
-        error: error.message 
-      }, "❌ Stream process error");
+      log.error(
+        {
+          cameraId: camera.id,
+          name: camera.name,
+          error: error.message,
+        },
+        "❌ Stream process error"
+      );
       activeStreams.delete(camera.id);
     });
 
     streamProcess.on("close", (code) => {
       if (code !== 0) {
-        log.error({ 
-          cameraId: camera.id, 
-          name: camera.name,
-          code,
-          stderr: stderr.split("\n").slice(-5).join("\n") 
-        }, "❌ Stream process exited");
+        log.error(
+          {
+            cameraId: camera.id,
+            name: camera.name,
+            code,
+            stderr: stderr.split("\n").slice(-5).join("\n"),
+          },
+          "❌ Stream process exited"
+        );
       } else {
-        log.info({ 
-          cameraId: camera.id, 
-          name: camera.name 
-        }, "Stream process closed normally");
+        log.info(
+          {
+            cameraId: camera.id,
+            name: camera.name,
+          },
+          "Stream process closed normally"
+        );
       }
       activeStreams.delete(camera.id);
     });
@@ -97,17 +123,22 @@ if (!isHLS) {
       camera,
     });
 
-    log.info({ 
-      cameraId: camera.id, 
-      name: camera.name 
-    }, "✅ Stream started successfully");
-
+    log.info(
+      {
+        cameraId: camera.id,
+        name: camera.name,
+      },
+      "✅ Stream started successfully"
+    );
   } catch (error) {
-    log.error({ 
-      cameraId: camera.id, 
-      name: camera.name,
-      error: error.message 
-    }, "❌ Failed to start stream");
+    log.error(
+      {
+        cameraId: camera.id,
+        name: camera.name,
+        error: error.message,
+      },
+      "❌ Failed to start stream"
+    );
     throw error;
   }
 }
@@ -117,14 +148,20 @@ if (!isHLS) {
 // -------------------------------------------------------------------
 export async function stopCameraStream(camera) {
   const stream = activeStreams.get(camera.id);
-  
+
   if (!stream) {
-    log.warn({ cameraId: camera.id, name: camera.name }, "No active stream to stop");
+    log.warn(
+      { cameraId: camera.id, name: camera.name },
+      "No active stream to stop"
+    );
     return;
   }
 
   try {
-    log.info({ cameraId: camera.id, name: camera.name }, "⏹️ Stopping camera stream");
+    log.info(
+      { cameraId: camera.id, name: camera.name },
+      "⏹️ Stopping camera stream"
+    );
     stream.process.kill("SIGTERM");
 
     setTimeout(() => {
@@ -135,18 +172,23 @@ export async function stopCameraStream(camera) {
       }
     }, 2000);
 
-    log.info({ 
-      cameraId: camera.id, 
-      name: camera.name,
-      duration: Math.floor((new Date() - stream.startTime) / 1000) + "s"
-    }, "✅ Stream stopped");
-
+    log.info(
+      {
+        cameraId: camera.id,
+        name: camera.name,
+        duration: Math.floor((new Date() - stream.startTime) / 1000) + "s",
+      },
+      "✅ Stream stopped"
+    );
   } catch (error) {
-    log.error({ 
-      cameraId: camera.id, 
-      name: camera.name,
-      error: error.message 
-    }, "❌ Failed to stop stream");
+    log.error(
+      {
+        cameraId: camera.id,
+        name: camera.name,
+        error: error.message,
+      },
+      "❌ Failed to stop stream"
+    );
   }
 }
 
@@ -193,23 +235,26 @@ export async function stopAllStreams() {
 // -------------------------------------------------------------------
 function buildSourceUrl(camera) {
   // PRIORITY 1: RTSP camera with IP
-  if (camera.ip && camera.ip.trim() !== '') {
+  if (camera.ip && camera.ip.trim() !== "") {
     const protocol = "rtsp://";
-    const auth = camera.username && camera.password
-      ? `${encodeURIComponent(camera.username)}:${encodeURIComponent(camera.password)}@`
-      : "";
+    const auth =
+      camera.username && camera.password
+        ? `${encodeURIComponent(camera.username)}:${encodeURIComponent(
+            camera.password
+          )}@`
+        : "";
     const addr = camera.port ? `${camera.ip}:${camera.port}` : camera.ip;
     const path = camera.streamPath || "/live";
     return `${protocol}${auth}${addr}${path}`;
   }
 
   // PRIORITY 2: Direct HLS URL
-  if (camera.hlsUrl && camera.hlsUrl.trim() !== '') {
+  if (camera.hlsUrl && camera.hlsUrl.trim() !== "") {
     return camera.hlsUrl;
   }
 
   throw new Error(
     `Cannot build stream URL for camera ${camera.name}. ` +
-    `Needs either: ip+port or hlsUrl`
+      `Needs either: ip+port or hlsUrl`
   );
 }

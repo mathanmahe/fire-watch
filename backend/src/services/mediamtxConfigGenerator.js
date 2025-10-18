@@ -4,23 +4,24 @@ import os from "node:os";
 import yaml from "js-yaml";
 import pino from "pino";
 import { prisma } from "../db/prisma.js";
-import { cfg } from "../config.js";  // ✅ Import at top level, not inside function
+import { cfg } from "../config.js"; // ✅ Import at top level, not inside function
 
 const log = pino({ name: "mediamtx-config-generator" });
 
 /**
  * Generates mediamtx.yml configuration file dynamically from database cameras
+ * @param {string} outputPath - Optional path where to write the config file
  * @returns {Promise<{serverIP: string, camerasCount: number}>} Generation result
  */
-export async function generateMediaMTXConfig() {
+export async function generateMediaMTXConfig(outputPath) {
   log.info("Starting MediaMTX config generation...");
 
-  console.log('🔍 mediamtxConfigGenerator - cfg:', cfg);
-  console.log('🔍 mediamtxConfigGenerator - cfg.userId:', cfg.userId);
+  console.log("🔍 mediamtxConfigGenerator - cfg:", cfg);
+  console.log("🔍 mediamtxConfigGenerator - cfg.userId:", cfg.userId);
 
   try {
     const currentUserId = cfg.userId;
-    console.log('🔍 mediamtxConfigGenerator - currentUserId:', currentUserId);
+    console.log("🔍 mediamtxConfigGenerator - currentUserId:", currentUserId);
 
     // ✅ Build where clause with user filter
     const whereClause = currentUserId
@@ -34,7 +35,9 @@ export async function generateMediaMTXConfig() {
     });
 
     if (currentUserId) {
-      log.info(`Found ${cameras.length} active cameras for user ${currentUserId}`);
+      log.info(
+        `Found ${cameras.length} active cameras for user ${currentUserId}`
+      );
     } else {
       log.info(`Found ${cameras.length} active cameras in database`);
       log.warn("⚠️ No USER_ID set - generating config for ALL cameras");
@@ -53,12 +56,13 @@ export async function generateMediaMTXConfig() {
       lineWidth: -1, // Disable line wrapping
       noRefs: true,
       styles: {
-        '!!bool': 'lowercase', // Output booleans as yes/no
+        "!!bool": "lowercase", // Output booleans as yes/no
       },
       sortKeys: false, // Keep original order
     });
 
-    const configPath = path.resolve(process.cwd(), "mediamtx.yml");
+    const configPath =
+      outputPath || path.resolve(process.cwd(), "mediamtx.yml");
     await fs.writeFile(configPath, yamlString, "utf8");
 
     log.info(`MediaMTX config written to ${configPath}`);
@@ -89,9 +93,9 @@ function buildMediaMTXConfig(cameras, serverIP) {
     hlsAddress: ":8888",
     hlsAllowOrigin: "*",
     hlsVariant: "lowLatency",
-    hlsSegmentCount: 3,          // ✅ Reduce segments for lower latency
-    hlsSegmentDuration: "1s",    // ✅ 1-second segments (was default 3s)
-    hlsPartDuration: "200ms",    // ✅ Sub-second chunks
+    hlsSegmentCount: 3, // ✅ Reduce segments for lower latency
+    hlsSegmentDuration: "1s", // ✅ 1-second segments (was default 3s)
+    hlsPartDuration: "200ms", // ✅ Sub-second chunks
 
     // ✅ OPTIMIZED WebRTC for low latency
     webrtc: true,
@@ -105,7 +109,7 @@ function buildMediaMTXConfig(cameras, serverIP) {
     // RTSP server
     rtsp: true,
     rtspAddress: ":8554",
-    
+
     // ✅ Reduce read timeout for faster disconnection detection
     readTimeout: "10s",
     writeTimeout: "10s",
@@ -203,7 +207,7 @@ export function sanitizePathName(name) {
  * @returns {string} Server IP address
  */
 export function detectServerIP() {
-  // Check for environment variable override
+  // ✅ Prefer explicit override, then real LAN, then fall back to loopback
   const envIP = process.env.MEDIAMTX_SERVER_IP;
   if (envIP && envIP !== "auto") {
     log.info(`Using MEDIAMTX_SERVER_IP from environment: ${envIP}`);

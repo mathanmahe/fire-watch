@@ -1,46 +1,45 @@
 // frontend/src/utils/worker-client.js
 import * as ort from "onnxruntime-web";
+import modelUrl from "../../models/yolov11n_bestFire.onnx?url"; // <-- data: URL after build
 
-// Serve wasm from same-origin static path:
-ort.env.wasm.wasmPaths = "/models/ort/";
+// Compute paths relative to the built worker file location.
+// In build: worker lives in dist/assets/** so dist root is ../../
+// const ASSETS_DIR = new URL("./", import.meta.url); // file:///.../dist/assets/
+// const DIST_ROOT = new URL("../../", import.meta.url);
 
-// const sessionOptions = {
-//   executionProviders: ["cpu"], // Prioritize GPU (WebGL), then WASM, then CPU
-// };
+// const modelPath = new URL("yolov11n_bestFire.onnx", DIST_ROOT).href;
+// ort.env.wasm.wasmPaths = new URL("ort/", DIST_ROOT).href; // points to dist/ort/
+// ort.env.wasm.wasmPaths = ASSETS_DIR.href;
 
-// Optional perf flags (require COOP/COEP, which you already set)
-ort.env.wasm.numThreads = 4;
+const wasmDir = new URL("./ort/", import.meta.url).href;
+ort.env.wasm.wasmPaths = wasmDir;
+
 ort.env.wasm.simd = true;
-if (typeof SharedArrayBuffer !== "undefined") {
-  ort.env.wasm.numThreads = 4; // Use multi-threading if supported
-  console.log("Multithread supported");
-} else {
-  console.warn(
-    "SharedArrayBuffer not supported. Falling back to single-threaded execution."
-  );
-}
+ort.env.wasm.numThreads = 1;
 
-if (ort.env.wasm.simd) {
-  ort.env.wasm.simd = true; // Enable SIMD if supported
-  console.log("SIMD supported in this browser.");
-} else {
-  console.warn("SIMD not supported in this browser.");
-}
-
-// Use valid web EPs: 'wasm' (safe everywhere) or 'webgpu' (if enabled) / 'webgl'
 const sessionOptions = { executionProviders: ["wasm"] };
+
+// In packaged Electron (file://) you usually won't have cross-origin isolation,
+// so SharedArrayBuffer may be unavailable. Keep it adaptive.
+// ort.env.wasm.simd = true; // harmless if unsupported
+// if (typeof SharedArrayBuffer !== "undefined") {
+//   ort.env.wasm.numThreads = 4;
+//   console.log("[worker] Multithread enabled");
+// } else {
+//   console.warn(
+//     "[worker] SharedArrayBuffer not available; running single-thread"
+//   );
+// }
 
 let sessionPromise;
 function getSession() {
   if (!sessionPromise) {
-    sessionPromise = ort.InferenceSession.create(
-      "/yolov11n_bestFire.onnx", // served from models/ at web root
-      sessionOptions
-    ).then((s) => {
-      // Helpful log to confirm model loaded
-      console.log("[worker] ONNX session ready");
-      return s;
-    });
+    sessionPromise = ort.InferenceSession.create(modelUrl, sessionOptions).then(
+      (s) => {
+        console.log("[worker] ONNX session ready");
+        return s;
+      }
+    );
   }
   return sessionPromise;
 }
