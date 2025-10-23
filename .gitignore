@@ -1,0 +1,12 @@
+todo.md
+frontend/node_modules
+backend/node_modules
+CLAUDE.md
+frontend/dist/
+frontend/dist-electron/.DS_Store
+.DS_Store
+**/.DS_Store
+frontend/dist-electron/
+*.app
+*.framework
+vids/*.mp4
