@@ -1,0 +1,8 @@
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.avi filter=lfs diff=lfs merge=lfs -text
+*.dmg filter=lfs diff=lfs merge=lfs -text
+*.asar filter=lfs diff=lfs merge=lfs -text
+frontend/dist-electron/** filter=lfs diff=lfs merge=lfs -text
+*/Electron[[:space:]]Framework filter=lfs diff=lfs merge=lfs -text
+*/Frameworks/** filter=lfs diff=lfs merge=lfs -text
