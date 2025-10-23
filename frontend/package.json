@@ -73,17 +73,17 @@
     "mac": {
       "category": "public.app-category.utilities",
       "target": "dmg",
-      "icon": "images/fire-icon.png",
+      "icon": "dist/fire-icon.png",
       "hardenedRuntime": false,
       "gatekeeperAssess": false
     },
     "win": {
       "target": "nsis",
-      "icon": "images/fire-icon.png"
+      "icon": "dist/fire-icon.png"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "images/fire-icon.png",
+      "icon": "dist/fire-icon.png",
       "category": "Utility"
     },
     "nsis": {

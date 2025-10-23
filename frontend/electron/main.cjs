@@ -150,7 +150,7 @@ function createWindow() {
       enableRemoteModule: false,
       preload: path.join(__dirname, "preload.cjs"),
     },
-    icon: path.join(__dirname, "../images/fire-icon.png"),
+    icon: path.join(__dirname, "../dist/fire-icon.png"),
     titleBarStyle: "default",
     show: false,
   });
@@ -202,15 +202,17 @@ function startBackend() {
 
   // ✅ FIX: Build proper PATH with common binary locations
   const systemPaths = [
-    '/usr/local/bin',
-    '/usr/bin',
-    '/bin',
-    '/opt/homebrew/bin',
-    '/opt/local/bin',
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/opt/homebrew/bin",
+    "/opt/local/bin",
   ];
-  
-  const currentPath = process.env.PATH || '';
-  const newPath = [...systemPaths, ...currentPath.split(':')].filter(Boolean).join(':');
+
+  const currentPath = process.env.PATH || "";
+  const newPath = [...systemPaths, ...currentPath.split(":")]
+    .filter(Boolean)
+    .join(":");
 
   backendProcess = spawn(command, args, {
     cwd: backendPath,
