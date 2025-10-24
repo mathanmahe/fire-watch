@@ -27,8 +27,9 @@ export async function generateMediaMTXConfig(outputPath, userId = null) {
     // ✅ If no user ID, return empty paths
     let cameras = [];
     if (userId) {
-      cameras = await dynamodb.getActiveCameras(userId);
-      log.info(`Found ${cameras.length} active cameras for user ${userId}`);
+      // ✅ CRITICAL FIX: Use getCamerasByUserId instead of getActiveCameras
+      cameras = await dynamodb.getCamerasByUserId(userId);
+      log.info(`Found ${cameras.length} cameras for user ${userId}`);
     } else {
       log.info("No user ID - skipping camera query (empty paths)");
     }

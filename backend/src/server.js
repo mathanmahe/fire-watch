@@ -77,29 +77,35 @@ wss.on("connection", async (ws, req) => {
       // Stop existing queue (if any)
       await stopDetectionQueue();
 
-      // Load cameras for new user from DynamoDB
-      const userCameras = await dynamodb.getActiveCameras(userId);
+      // ✅ ONLY CHANGE: Load ALL cameras for this user (not just active)
+      const userCameras = await dynamodb.getCamerasByUserId(userId);
 
       if (userCameras.length > 0) {
-  log.info(
-    { userId, count: userCameras.length },
-    "🎥 Starting detection for new user's cameras"
-  );
+        log.info(
+          { userId, count: userCameras.length },
+          "🎥 Starting detection for new user's cameras"
+        );
 
-  // ✅ Regenerate MediaMTX config for this user
-  try {
-    log.info("🔄 Regenerating MediaMTX config for logged-in user...");
-    await stopMediaMTX();
-    await startMediaMTX(userId);  // ✅ FIX: Pass userId here
-    log.info("✅ MediaMTX restarted with user's cameras");
-  } catch (err) {
-    log.error({ error: err.message }, "❌ Failed to restart MediaMTX");
-  }
+        // ✅ Regenerate MediaMTX config for this user
+        try {
+          log.info("🔄 Regenerating MediaMTX config for logged-in user...");
+          await stopMediaMTX();
+          await startMediaMTX(userId);
+          log.info("✅ MediaMTX restarted with user's cameras");
+        } catch (err) {
+          log.error({ error: err.message }, "❌ Failed to restart MediaMTX");
+        }
 
-  await startDetectionQueue(userCameras);
-} else {
-  log.warn({ userId }, "⚠️ No cameras found for this user");
-}
+        // ✅ Attach userId to each camera before passing to queue
+        const camerasWithUserId = userCameras.map(cam => ({
+          ...cam,
+          userId: userId
+        }));
+
+        await startDetectionQueue(camerasWithUserId);
+      } else {
+        log.warn({ userId }, "⚠️ No cameras found for this user");
+      }
     } else {
       log.info({ userId }, "♻️ Same user reconnected, keeping existing queue");
     }
