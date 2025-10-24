@@ -192,15 +192,24 @@ export async function getCamerasByIds(userId, cameraIds) {
   try {
     const cameras = [];
     
-    for (const id of cameraIds) {
+    // ✅ Filter out invalid IDs
+    const validIds = cameraIds.filter(id => !isNaN(id) && id !== null && id !== undefined);
+    
+    if (validIds.length === 0) {
+      log.warn({ userId }, "No valid camera IDs provided");
+      return [];
+    }
+    
+    for (const id of validIds) {
       try {
-        const camera = await getCamera(userId, id);
+        const camera = await getCamera(userId, Number(id));
         cameras.push(camera);
       } catch (error) {
         log.warn({ userId, id }, "Camera not found in batch get");
       }
     }
 
+    log.info({ userId, count: cameras.length }, "Cameras retrieved by IDs");
     return cameras;
   } catch (error) {
     log.error({ error: error.message, userId }, "Failed to get cameras by IDs");

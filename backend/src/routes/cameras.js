@@ -49,8 +49,9 @@ cameras.post("/", async (req, res) => {
       console.error("❌ Failed to restart MediaMTX:", err.message);
     }
 
-    // ✅ ADD THIS: Automatically start local detection for new camera
+    // ✅ CRITICAL: Attach userId to camera object before adding to queue
     if (cam.isActive) {
+      cam.userId = userId;
       addCameraToQueue(cam);
       console.log(`✅ Added ${cam.name} to detection queue`);
     }
@@ -81,12 +82,12 @@ cameras.get("/detection-status", async (req, res) => {
     const queueStatus = getQueueStatus();
 
     const status = cameraList.map((cam) => ({
-      cameraId: cam.cameraId,
+      id: cam.id,  // ✅ Use numeric id
       name: cam.name,
       location: cam.location,
-      isRunning: queueStatus.cameras.some((c) => c.cameraId === cam.cameraId),
-      isFire: queueStatus.fireDetections[cam.cameraId] || false,
-      lastChecked: queueStatus.lastChecked[cam.cameraId] || null,
+      isRunning: queueStatus.cameras.some((c) => c.id === cam.id),  // ✅ Compare by id
+      isFire: queueStatus.fireDetections[cam.id] || false,  // ✅ Use id as key
+      lastChecked: queueStatus.lastChecked[cam.id] || null,  // ✅ Use id as key
     }));
 
     res.json(status);
@@ -105,11 +106,11 @@ cameras.get("/status/all", async (req, res) => {
 
     res.json(
       cams.map((c) => ({
-        cameraId: c.cameraId,
+        id: c.id,  // ✅ Use numeric id
         name: c.name,
         location: c.location,
-        isStreaming: queueStatus.streamingCameras.has(c.cameraId),
-        isFire: queueStatus.fireDetections[c.cameraId] || false,
+        isStreaming: queueStatus.streamingCameras.has(c.id),  // ✅ Compare by id
+        isFire: queueStatus.fireDetections[c.id] || false,  // ✅ Use id as key
         isView: c.isActive,
       }))
     );
@@ -130,7 +131,18 @@ cameras.post("/start-detection", async (req, res) => {
         .json({ error: "cameraIds must be a non-empty array" });
     }
 
-    const cameraList = await dynamodb.getCamerasByIds(userId, cameraIds);
+    // ✅ Convert and validate IDs
+    const ids = cameraIds
+      .map(id => Number(id))
+      .filter(id => !isNaN(id));
+
+    if (ids.length === 0) {
+      return res.status(400).json({ error: "No valid camera IDs provided" });
+    }
+
+    console.log("▶️ Starting detection for IDs:", ids);
+
+    const cameraList = await dynamodb.getCamerasByIds(userId, ids);
 
     if (cameraList.length === 0) {
       return res.status(404).json({ error: "No cameras found" });
@@ -142,12 +154,16 @@ cameras.post("/start-detection", async (req, res) => {
     for (const cam of cameraList) {
       try {
         // Update camera to active
-        await dynamodb.updateCamera(userId, cam.cameraId, { isActive: true });
+        await dynamodb.updateCamera(userId, cam.id, { isActive: true });
         
+        // ✅ CRITICAL: Attach userId before adding to queue
+        cam.userId = userId;
         addCameraToQueue(cam);
-        started.push({ cameraId: cam.cameraId, name: cam.name });
+        started.push({ id: cam.id, name: cam.name });
+        console.log(`▶️ Started detection for ${cam.name} (id: ${cam.id})`);
       } catch (error) {
-        failed.push({ cameraId: cam.cameraId, name: cam.name, error: error.message });
+        console.error(`❌ Failed to start ${cam.name}:`, error.message);
+        failed.push({ id: cam.id, name: cam.name, error: error.message });
       }
     }
 
@@ -157,6 +173,7 @@ cameras.post("/start-detection", async (req, res) => {
       message: `Started detection for ${started.length} camera(s)`,
     });
   } catch (error) {
+    console.error("❌ Start detection error:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -172,23 +189,43 @@ cameras.post("/stop-detection", async (req, res) => {
         .status(400).json({ error: "cameraIds must be a non-empty array" });
     }
 
-    const cameraList = await dynamodb.getCamerasByIds(userId, cameraIds);
+    // ✅ Convert and validate IDs
+    const ids = cameraIds
+      .map(id => Number(id))
+      .filter(id => !isNaN(id));
+
+    if (ids.length === 0) {
+      return res.status(400).json({ error: "No valid camera IDs provided" });
+    }
+
+    console.log("🛑 Stopping detection for IDs:", ids);
+
+    const cameraList = await dynamodb.getCamerasByIds(userId, ids);
 
     const stopped = [];
+    const failed = [];
 
     for (const cam of cameraList) {
-      // Update camera to inactive
-      await dynamodb.updateCamera(userId, cam.cameraId, { isActive: false });
-      
-      removeCameraFromQueue(cam.cameraId);
-      stopped.push({ cameraId: cam.cameraId, name: cam.name });
+      try {
+        // Update camera to inactive
+        await dynamodb.updateCamera(userId, cam.id, { isActive: false });
+        
+        removeCameraFromQueue(cam.id);
+        stopped.push({ id: cam.id, name: cam.name });
+        console.log(`⏸️ Stopped detection for ${cam.name} (id: ${cam.id})`);
+      } catch (error) {
+        console.error(`❌ Failed to stop ${cam.name}:`, error.message);
+        failed.push({ id: cam.id, name: cam.name, error: error.message });
+      }
     }
 
     res.json({
       stopped,
+      failed,
       message: `Stopped detection for ${stopped.length} camera(s)`,
     });
   } catch (error) {
+    console.error("❌ Stop detection error:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -197,7 +234,7 @@ cameras.post("/stop-detection", async (req, res) => {
 cameras.get("/:id", async (req, res) => {
   try {
     const userId = req.user.sub;
-    const id = Number(req.params.id);  // ✅ Parse as number
+    const id = Number(req.params.id);
 
     const cam = await dynamodb.getCamera(userId, id);
     res.json(cam);
@@ -213,13 +250,15 @@ cameras.get("/:id", async (req, res) => {
 cameras.put("/:id", async (req, res) => {
   try {
     const userId = req.user.sub;
-    const id = Number(req.params.id);  // ✅ Parse as number
+    const id = Number(req.params.id);
 
     await dynamodb.getCamera(userId, id);
     const cam = await dynamodb.updateCamera(userId, id, req.body);
 
     if (req.body.isActive !== undefined) {
       if (req.body.isActive) {
+        // ✅ CRITICAL: Attach userId before adding to queue
+        cam.userId = userId;
         addCameraToQueue(cam);
       } else {
         removeCameraFromQueue(cam.id);
@@ -239,7 +278,7 @@ cameras.put("/:id", async (req, res) => {
 cameras.delete("/:id", async (req, res) => {
   try {
     const userId = req.user.sub;
-    const id = Number(req.params.id);  // ✅ Parse as number
+    const id = Number(req.params.id);
 
     await dynamodb.getCamera(userId, id);
     removeCameraFromQueue(id);
