@@ -16,19 +16,24 @@ let sessionPromise = null;
 
 function getSession() {
   if (!sessionPromise) {
-    const modelPath = path.resolve(__dirname, "../../models/yolov11n_bestFire.onnx");
+    const modelPath = path.resolve(
+      __dirname,
+      "../../models/yolov11n_bestFire.onnx"
+    );
     log.info({ modelPath }, "Loading ONNX model...");
-    
+
     sessionPromise = ort.InferenceSession.create(modelPath, {
       executionProviders: ["cpu"],
-    }).then((session) => {
-      log.info("✅ ONNX session ready");
-      return session;
-    }).catch((err) => {
-      log.error({ error: err.message }, "❌ Failed to load ONNX model");
-      sessionPromise = null;
-      throw err;
-    });
+    })
+      .then((session) => {
+        log.info("✅ ONNX session ready");
+        return session;
+      })
+      .catch((err) => {
+        log.error({ error: err.message }, "❌ Failed to load ONNX model");
+        sessionPromise = null;
+        throw err;
+      });
   }
   return sessionPromise;
 }
@@ -40,13 +45,17 @@ function grabFrameOnce(srcUrl) {
   return new Promise((resolve, reject) => {
     const isRtsp = srcUrl.startsWith("rtsp://");
     const args = ["-y"];
-    
+
     if (isRtsp) {
       args.push(
-        "-rtsp_transport", "tcp",
-        "-timeout", "5000000",
-        "-analyzeduration", "1000000",
-        "-probesize", "1000000"
+        "-rtsp_transport",
+        "tcp",
+        "-timeout",
+        "5000000",
+        "-analyzeduration",
+        "1000000",
+        "-probesize",
+        "1000000"
       );
     }
 
@@ -61,7 +70,12 @@ function grabFrameOnce(srcUrl) {
     ff.on("error", reject);
     ff.on("close", (code) => {
       if (code === 0 && chunks.length) resolve(Buffer.concat(chunks));
-      else reject(new Error(`ffmpeg exit ${code}: ${err.split("\n").slice(-3).join(" ")}`));
+      else
+        reject(
+          new Error(
+            `ffmpeg exit ${code}: ${err.split("\n").slice(-3).join(" ")}`
+          )
+        );
     });
   });
 }
@@ -79,7 +93,9 @@ async function prepareInput(jpegBuffer, modelInputSize = 640) {
     const N = modelInputSize * modelInputSize;
     const arr = new Float32Array(N * 3);
 
-    let r = 0, g = N, b = 2 * N;
+    let r = 0,
+      g = N,
+      b = 2 * N;
     for (let i = 0; i < data.length; i += 3) {
       arr[r++] = data[i] / 255;
       arr[g++] = data[i + 1] / 255;
@@ -99,16 +115,12 @@ async function prepareInput(jpegBuffer, modelInputSize = 640) {
 async function runInference(inputTensor) {
   try {
     const session = await getSession();
-    
-    const tensor = new ort.Tensor(
-      "float32",
-      inputTensor,
-      [1, 3, 640, 640]
-    );
+
+    const tensor = new ort.Tensor("float32", inputTensor, [1, 3, 640, 640]);
 
     const outputs = await session.run({ images: tensor });
     const outputData = outputs[Object.keys(outputs)[0]].data;
-    
+
     return outputData;
   } catch (e) {
     log.error({ error: e.message }, "Inference failed");
@@ -130,7 +142,8 @@ function processOutput(output, imgW = 640, imgH = 640) {
   const probThreshold = 0.2;
 
   for (let i = 0; i < cells; i++) {
-    let classId = 0, best = 0;
+    let classId = 0,
+      best = 0;
     for (let c = 0; c < clsCount; c++) {
       const p = output[cells * (c + 4) + i];
       if (p > best) {
@@ -167,14 +180,14 @@ function processOutput(output, imgW = 640, imgH = 640) {
   // NMS
   boxes.sort((a, b) => b[5] - a[5]);
   const keep = [];
-  
+
   const iou = (A, B) => {
     const x1 = Math.max(A[0], B[0]);
     const y1 = Math.max(A[1], B[1]);
     const x2 = Math.min(A[2], B[2]);
     const y2 = Math.min(A[3], B[3]);
     const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
-    
+
     const areaA = Math.max(0, A[2] - A[0]) * Math.max(0, A[3] - A[1]);
     const areaB = Math.max(0, B[2] - B[0]) * Math.max(0, B[3] - B[1]);
     const uni = areaA + areaB - inter;
@@ -188,7 +201,7 @@ function processOutput(output, imgW = 640, imgH = 640) {
   }
 
   const detected = fireCount > 0 || smokeCount > 0;
-  
+
   return {
     boxes: keep,
     detected,
@@ -207,32 +220,40 @@ export async function detectFire(cameraUrl, cameraName) {
     const inputTensor = await prepareInput(jpegBuffer, 640);
     const outputData = await runInference(inputTensor);
     const result = processOutput(outputData, 640, 640);
-    
-    log.info({ 
-      camera: cameraName, 
-      detected: result.detected,
-      fireCount: result.fireCount,
-      smokeCount: result.smokeCount 
-    }, "Detection complete");
-    
+
+    log.info(
+      {
+        camera: cameraName,
+        detected: result.detected,
+        fireCount: result.fireCount,
+        smokeCount: result.smokeCount,
+      },
+      "Detection complete"
+    );
+
     return {
       isFire: result.detected,
       confidence: result.boxes.length > 0 ? result.boxes[0][5] : 0,
       boxes: result.boxes,
       fireCount: result.fireCount,
       smokeCount: result.smokeCount,
+      frameBuffer: jpegBuffer,
     };
   } catch (error) {
-    log.error({ 
-      camera: cameraName, 
-      error: error.message 
-    }, "Detection failed");
-    
+    log.error(
+      {
+        camera: cameraName,
+        error: error.message,
+      },
+      "Detection failed"
+    );
+
     return {
       isFire: false,
       confidence: 0,
       boxes: [],
       error: error.message,
+      frameBuffer: null,
     };
   }
 }
@@ -242,30 +263,40 @@ export async function detectFire(cameraUrl, cameraName) {
 // -------------------------------------------------------------------
 export function buildCameraUrl(cam) {
   // ✅ PRIORITY 1: RTSP camera with IP address (YOUR REAL CAMERA)
-  if (cam.ip && cam.ip.trim() !== '') {
+  if (cam.ip && cam.ip.trim() !== "") {
     const protocol = "rtsp://";
-    const auth = cam.username && cam.password
-      ? `${encodeURIComponent(cam.username)}:${encodeURIComponent(cam.password)}@`
-      : "";
+    const auth =
+      cam.username && cam.password
+        ? `${encodeURIComponent(cam.username)}:${encodeURIComponent(
+            cam.password
+          )}@`
+        : "";
     const addr = cam.port ? `${cam.ip}:${cam.port}` : cam.ip;
     const path = cam.streamPath || "/live";
     const url = `${protocol}${auth}${addr}${path}`;
-    
-    log.debug({ cameraId: cam.id, url: url.replace(/:([^:@]+)@/, ":****@") }, "Built RTSP URL for detection");
+
+    log.debug(
+      { cameraId: cam.id, url: url.replace(/:([^:@]+)@/, ":****@") },
+      "Built RTSP URL for detection"
+    );
     return url;
   }
 
   // ✅ PRIORITY 2: HLS stream URL
-  if (cam.hlsUrl && cam.hlsUrl.trim() !== '') {
-    log.debug({ cameraId: cam.id, url: cam.hlsUrl }, "Using HLS URL for detection");
+  if (cam.hlsUrl && cam.hlsUrl.trim() !== "") {
+    log.debug(
+      { cameraId: cam.id, url: cam.hlsUrl },
+      "Using HLS URL for detection"
+    );
     return cam.hlsUrl;
   }
 
   // ❌ Don't use MediaMTX as source - that's the destination!
-  const errorMsg = `Cannot build camera URL for ${cam.name}. ` +
+  const errorMsg =
+    `Cannot build camera URL for ${cam.name}. ` +
     `Camera needs either: (1) ip+port for RTSP, or (2) hlsUrl for HLS. ` +
-    `Current: ip=${cam.ip || 'null'}, hlsUrl=${cam.hlsUrl || 'null'}`;
-  
+    `Current: ip=${cam.ip || "null"}, hlsUrl=${cam.hlsUrl || "null"}`;
+
   log.error({ cameraId: cam.id, name: cam.name }, errorMsg);
   throw new Error(errorMsg);
 }
