@@ -97,9 +97,9 @@ wss.on("connection", async (ws, req) => {
         }
 
         // ✅ Attach userId to each camera before passing to queue
-        const camerasWithUserId = userCameras.map(cam => ({
+        const camerasWithUserId = userCameras.map((cam) => ({
           ...cam,
-          userId: userId
+          userId: userId,
         }));
 
         await startDetectionQueue(camerasWithUserId);
@@ -184,10 +184,7 @@ export function broadcastFireDetection(userId, id, cameraName, isFire) {
     }
   }
 
-  log.info(
-    { userId, id, isFire, sentCount },
-    "📢 Fire detection broadcasted"
-  );
+  log.info({ userId, id, isFire, sentCount }, "📢 Fire detection broadcasted");
 }
 
 // -------------------------------------------------------------------
@@ -251,14 +248,18 @@ async function main() {
   try {
     log.info("Starting MediaMTX with empty configuration...");
     await startMediaMTX();
-    log.info("✅ MediaMTX started (waiting for user login to add camera paths)");
+    log.info(
+      "✅ MediaMTX started (waiting for user login to add camera paths)"
+    );
   } catch (err) {
     log.error({ error: err.message }, "Failed to start MediaMTX");
   }
 
   // ✅ NO detection queue at startup - will start when user logs in
   log.info("⏳ Waiting for user to login via WebSocket...");
-  log.info("💡 Cameras and detection will load automatically after authentication");
+  log.info(
+    "💡 Cameras and detection will load automatically after authentication"
+  );
 
   httpServer.listen(cfg.port, () =>
     log.info(`🚀 API & WebSocket listening on port ${cfg.port}`)
