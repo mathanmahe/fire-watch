@@ -6,7 +6,6 @@ import pino from "pino";
 import path from "path";
 import { fileURLToPath } from "url";
 import { cfg } from "./config.js";
-import { prisma } from "./db/prisma.js";
 import { requireAuth } from "./auth/cognitoVerify.js";
 import {
   startMediaMTX,
@@ -20,6 +19,7 @@ import {
   stopDetectionQueue,
   setBroadcastFunction,
 } from "./services/detectionQueue.js";
+import { dynamodb } from "./db/dynamodb.js";
 
 const log = pino({ name: "server" });
 const app = express();
@@ -29,8 +29,8 @@ const httpServer = createServer(app);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Track current user
-let currentUserId = cfg.userId || null;
+// ✅ Track current user (starts as null, set dynamically on login)
+let currentUserId = null;
 
 // -------------------------------------------------------------------
 // 🧠 WebSocket setup with JWT authentication
@@ -60,7 +60,12 @@ wss.on("connection", async (ws, req) => {
     const payload = await verifier.verify(token);
     const userId = payload.sub;
 
-    // ✅ AUTO-DETECT: If this is a new user, restart detection queue
+    log.info(
+      { userId, email: payload.email },
+      "✅ User authenticated via WebSocket"
+    );
+
+    // ✅ DYNAMIC USER DETECTION: Switch detection queue for new user
     if (!currentUserId || currentUserId !== userId) {
       log.info(
         { oldUser: currentUserId, newUser: userId },
@@ -69,40 +74,49 @@ wss.on("connection", async (ws, req) => {
 
       currentUserId = userId;
 
-      // Stop existing queue
+      // Stop existing queue (if any)
       await stopDetectionQueue();
 
-      // Load cameras for new user
-      const userCameras = await prisma.camera.findMany({
-        where: { userId: currentUserId, isActive: true },
-        orderBy: { id: "asc" },
-      });
+      // ✅ ONLY CHANGE: Load ALL cameras for this user (not just active)
+      const userCameras = await dynamodb.getCamerasByUserId(userId);
 
       if (userCameras.length > 0) {
         log.info(
           { userId, count: userCameras.length },
           "🎥 Starting detection for new user's cameras"
         );
-        
-        // ✅ ADD THIS: Regenerate MediaMTX config for new user
+
+        // ✅ Regenerate MediaMTX config for this user
         try {
-          log.info("🔄 Regenerating MediaMTX config for new user...");
+          log.info("🔄 Regenerating MediaMTX config for logged-in user...");
           await stopMediaMTX();
-          await startMediaMTX();
-          log.info("✅ MediaMTX restarted with new user's cameras");
+          await startMediaMTX(userId);
+          log.info("✅ MediaMTX restarted with user's cameras");
         } catch (err) {
           log.error({ error: err.message }, "❌ Failed to restart MediaMTX");
         }
-        
-        await startDetectionQueue(userCameras);
+
+        // ✅ Attach userId to each camera before passing to queue
+        const camerasWithUserId = userCameras.map(cam => ({
+          ...cam,
+          userId: userId
+        }));
+
+        await startDetectionQueue(camerasWithUserId);
       } else {
         log.warn({ userId }, "⚠️ No cameras found for this user");
       }
+    } else {
+      log.info({ userId }, "♻️ Same user reconnected, keeping existing queue");
     }
 
+    // Register WebSocket client
     if (!wsClients.has(userId)) wsClients.set(userId, new Set());
     wsClients.get(userId).add(ws);
-    log.info({ userId, email: payload.email }, "✅ WebSocket authenticated");
+    log.info(
+      { userId, totalClients: wsClients.get(userId).size },
+      "📡 WebSocket client registered"
+    );
 
     ws.send(
       JSON.stringify({ type: "connected", message: "WebSocket connected" })
@@ -115,13 +129,6 @@ wss.on("connection", async (ws, req) => {
         if (clients.size === 0) {
           wsClients.delete(userId);
           log.info({ userId }, "❌ Last WebSocket disconnected for user");
-
-          // ✅ OPTIONAL: Stop detection when user disconnects
-          // if (userId === currentUserId) {
-          //   log.info("⏸️ Stopping detection queue (no users connected)");
-          //   stopDetectionQueue();
-          //   currentUserId = null;
-          // }
         }
       }
       log.info({ userId }, "❌ WebSocket disconnected");
@@ -135,9 +142,9 @@ wss.on("connection", async (ws, req) => {
 // -------------------------------------------------------------------
 // 🔥 Broadcast helper for fire detection
 // -------------------------------------------------------------------
-export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
+export function broadcastFireDetection(userId, id, cameraName, isFire) {
   log.info(
-    { userId, cameraId, cameraName, isFire, totalUsers: wsClients.size },
+    { userId, id, cameraName, isFire, totalUsers: wsClients.size },
     "🔥 broadcastFireDetection called"
   );
 
@@ -145,7 +152,7 @@ export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
 
   if (!clients || clients.size === 0) {
     log.warn(
-      { userId, cameraId, availableUsers: Array.from(wsClients.keys()) },
+      { userId, id, availableUsers: Array.from(wsClients.keys()) },
       "⚠️ No WebSocket clients found for userId"
     );
     return;
@@ -153,14 +160,14 @@ export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
 
   const payload = JSON.stringify({
     type: "fire-detection",
-    cameraId,
+    cameraId: id,
     cameraName,
     isFire,
     timestamp: new Date().toISOString(),
   });
 
   log.info(
-    { userId, cameraId, clientCount: clients.size, payload },
+    { userId, id, clientCount: clients.size, payload },
     "📡 Sending to WebSocket clients"
   );
 
@@ -171,14 +178,14 @@ export function broadcastFireDetection(userId, cameraId, cameraName, isFire) {
       sentCount++;
     } else {
       log.warn(
-        { userId, cameraId, readyState: client.readyState },
+        { userId, id, readyState: client.readyState },
         "⚠️ Client not in OPEN state"
       );
     }
   }
 
   log.info(
-    { userId, cameraId, isFire, sentCount },
+    { userId, id, isFire, sentCount },
     "📢 Fire detection broadcasted"
   );
 }
@@ -196,10 +203,6 @@ app.use(
 app.use(express.json({ limit: "5mb" }));
 
 // Serve static files from the frontend dist folder
-// Detection logic:
-// - Dev mode (npm run dev): Use relative path ../../frontend/dist
-// - Electron dev (npm run electron-dev): Use relative path ../../frontend/dist
-// - Electron production (dist): Backend runs from Resources/backend, frontend is in app.asar
 const isElectronProduction =
   process.env.ELECTRON &&
   process.resourcesPath &&
@@ -207,18 +210,16 @@ const isElectronProduction =
 let frontendDistPath;
 
 if (isElectronProduction) {
-  // Production Electron build - frontend is in app.asar
   frontendDistPath = path.join(process.resourcesPath, "app.asar", "dist");
   log.info(
     { frontendDistPath, resourcesPath: process.resourcesPath },
-    "📁 Electron production - serving from asar"
+    "📂 Electron production - serving from asar"
   );
 } else {
-  // Development mode (both regular and electron-dev)
   frontendDistPath = path.join(__dirname, "../../frontend/dist");
   log.info(
     { frontendDistPath, isElectron: !!process.env.ELECTRON },
-    "📁 Development mode"
+    "📂 Development mode"
   );
 }
 
@@ -236,10 +237,6 @@ app.get("*", (req, res) => {
   const indexPath = isElectronProduction
     ? path.join(process.resourcesPath, "app.asar", "dist", "index.html")
     : path.join(__dirname, "../../frontend/dist/index.html");
-  log.info(
-    { indexPath, exists: require("fs").existsSync(indexPath) },
-    "📄 Serving index.html"
-  );
   res.sendFile(indexPath);
 });
 
@@ -247,59 +244,21 @@ app.get("*", (req, res) => {
 // 🚀 Main Entrypoint
 // -------------------------------------------------------------------
 async function main() {
-  await prisma.$connect();
-
   setBroadcastFunction(broadcastFireDetection);
   log.info("🔌 WebSocket broadcast function registered with detection queue");
 
-  // Start MediaMTX
+  // ✅ Start MediaMTX with EMPTY config (will be populated on login)
   try {
-    log.info("Starting MediaMTX...");
+    log.info("Starting MediaMTX with empty configuration...");
     await startMediaMTX();
-    log.info("MediaMTX started successfully");
+    log.info("✅ MediaMTX started (waiting for user login to add camera paths)");
   } catch (err) {
     log.error({ error: err.message }, "Failed to start MediaMTX");
   }
 
-  // ✅ Check if USER_ID is set in env
-  if (cfg.userId) {
-    log.info(
-      { userId: cfg.userId },
-      "👤 USER_ID found in environment, starting detection"
-    );
-    currentUserId = cfg.userId;
-
-    // Set all cameras to active for server startup
-    log.info(
-      { userId: cfg.userId },
-      "🔄 Setting all cameras to active for server startup"
-    );
-    await prisma.camera.updateMany({
-      where: { userId: currentUserId },
-      data: { isActive: true },
-    });
-
-    const activeCameras = await prisma.camera.findMany({
-      where: { userId: currentUserId, isActive: true },
-      orderBy: { id: "asc" },
-    });
-
-    if (activeCameras.length > 0) {
-      log.info(
-        `🎥 Starting LOCAL fire detection for ${activeCameras.length} camera(s)...`
-      );
-      await startDetectionQueue(activeCameras);
-      log.info("🔥 Local detection queue started successfully");
-    } else {
-      log.warn(`⚠️ No active cameras found for user ${currentUserId}`);
-    }
-  } else {
-    // ✅ No USER_ID set - wait for WebSocket connection to auto-detect
-    log.info(
-      "⏳ No USER_ID in environment - waiting for user to connect via WebSocket"
-    );
-    log.info("💡 Detection will start automatically when user logs in");
-  }
+  // ✅ NO detection queue at startup - will start when user logs in
+  log.info("⏳ Waiting for user to login via WebSocket...");
+  log.info("💡 Cameras and detection will load automatically after authentication");
 
   httpServer.listen(cfg.port, () =>
     log.info(`🚀 API & WebSocket listening on port ${cfg.port}`)
@@ -311,7 +270,6 @@ process.on("SIGTERM", async () => {
   log.info("SIGTERM received, shutting down...");
   await stopDetectionQueue();
   await stopMediaMTX();
-  await prisma.$disconnect();
   process.exit(0);
 });
 
@@ -319,7 +277,6 @@ process.on("SIGINT", async () => {
   log.info("SIGINT received, shutting down...");
   await stopDetectionQueue();
   await stopMediaMTX();
-  await prisma.$disconnect();
   process.exit(0);
 });
 

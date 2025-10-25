@@ -1,46 +1,37 @@
 import fs from "node:fs/promises";
-import path from "node:path";
+import path from "path";
 import os from "node:os";
 import yaml from "js-yaml";
 import pino from "pino";
-import { prisma } from "../db/prisma.js";
-import { cfg } from "../config.js"; // ✅ Import at top level, not inside function
+import { dynamodb } from "../db/dynamodb.js";
 
 const log = pino({ name: "mediamtx-config-generator" });
 
 /**
- * Generates mediamtx.yml configuration file dynamically from database cameras
+ * Generates mediamtx.yml configuration file dynamically from DynamoDB cameras
  * @param {string} outputPath - Optional path where to write the config file
+ * @param {string} userId - Optional user ID to filter cameras
  * @returns {Promise<{serverIP: string, camerasCount: number}>} Generation result
  */
-export async function generateMediaMTXConfig(outputPath) {
+export async function generateMediaMTXConfig(outputPath, userId = null) {
   log.info("Starting MediaMTX config generation...");
 
-  console.log("🔍 mediamtxConfigGenerator - cfg:", cfg);
-  console.log("🔍 mediamtxConfigGenerator - cfg.userId:", cfg.userId);
-
   try {
-    const currentUserId = cfg.userId;
-    console.log("🔍 mediamtxConfigGenerator - currentUserId:", currentUserId);
-
-    // ✅ Build where clause with user filter
-    const whereClause = currentUserId
-      ? { userId: currentUserId, isActive: true }
-      : { isActive: true };
-
-    // 1. Fetch cameras with user filtering
-    const cameras = await prisma.camera.findMany({
-      where: whereClause,
-      orderBy: { id: "asc" },
-    });
-
-    if (currentUserId) {
-      log.info(
-        `Found ${cameras.length} active cameras for user ${currentUserId}`
-      );
+    if (!userId) {
+      log.warn("⚠️ No USER_ID provided - generating config with EMPTY paths");
+      log.warn("⚠️ Config will be regenerated when user logs in via WebSocket");
     } else {
-      log.info(`Found ${cameras.length} active cameras in database`);
-      log.warn("⚠️ No USER_ID set - generating config for ALL cameras");
+      log.info(`Generating config for user: ${userId}`);
+    }
+
+    // ✅ If no user ID, return empty paths
+    let cameras = [];
+    if (userId) {
+      // ✅ CRITICAL FIX: Use getCamerasByUserId instead of getActiveCameras
+      cameras = await dynamodb.getCamerasByUserId(userId);
+      log.info(`Found ${cameras.length} cameras for user ${userId}`);
+    } else {
+      log.info("No user ID - skipping camera query (empty paths)");
     }
 
     // 2. Detect server IP address
@@ -53,19 +44,19 @@ export async function generateMediaMTXConfig(outputPath) {
     // 4. Convert to YAML and write to file
     const yamlString = yaml.dump(config, {
       indent: 2,
-      lineWidth: -1, // Disable line wrapping
+      lineWidth: -1,
       noRefs: true,
       styles: {
-        "!!bool": "lowercase", // Output booleans as yes/no
+        "!!bool": "lowercase",
       },
-      sortKeys: false, // Keep original order
+      sortKeys: false,
     });
 
     const configPath =
       outputPath || path.resolve(process.cwd(), "mediamtx.yml");
     await fs.writeFile(configPath, yamlString, "utf8");
 
-    log.info(`MediaMTX config written to ${configPath}`);
+    log.info(`MediaMTX config written to ${configPath} (${cameras.length} cameras)`);
 
     return {
       serverIP,
@@ -80,24 +71,22 @@ export async function generateMediaMTXConfig(outputPath) {
 
 /**
  * Builds the complete MediaMTX configuration object
- * @param {Array} cameras - Array of camera records from database
+ * @param {Array} cameras - Array of camera records from DynamoDB
  * @param {string} serverIP - Server IP address for WebRTC
  * @returns {Object} MediaMTX configuration object
  */
 function buildMediaMTXConfig(cameras, serverIP) {
   const config = {
-    logLevel: "info", // Changed from "debug" to reduce logs
+    logLevel: "info",
 
-    // ✅ OPTIMIZED HLS for low latency
     hls: true,
     hlsAddress: ":8888",
     hlsAllowOrigin: "*",
     hlsVariant: "lowLatency",
-    hlsSegmentCount: 3, // ✅ Reduce segments for lower latency
-    hlsSegmentDuration: "1s", // ✅ 1-second segments (was default 3s)
-    hlsPartDuration: "200ms", // ✅ Sub-second chunks
+    hlsSegmentCount: 3,
+    hlsSegmentDuration: "1s",
+    hlsPartDuration: "200ms",
 
-    // ✅ OPTIMIZED WebRTC for low latency
     webrtc: true,
     webrtcAddress: ":8889",
     webrtcAllowOrigin: "*",
@@ -106,15 +95,12 @@ function buildMediaMTXConfig(cameras, serverIP) {
     webrtcIPsFromInterfaces: false,
     webrtcAdditionalHosts: [serverIP],
 
-    // RTSP server
     rtsp: true,
     rtspAddress: ":8554",
 
-    // ✅ Reduce read timeout for faster disconnection detection
     readTimeout: "10s",
     writeTimeout: "10s",
 
-    // Camera paths
     paths: buildCameraPaths(cameras),
   };
 
@@ -130,10 +116,7 @@ function buildCameraPaths(cameras) {
   const paths = {};
 
   for (const cam of cameras) {
-    // Use camera name as the MediaMTX path name
-    // Sanitize name to be URL-safe (replace spaces with underscores)
-    const pathName = sanitizePathName(cam.name);
-
+    const pathName = sanitizePathName(cam.streamName || cam.name);
     const pathConfig = buildCameraPathConfig(cam);
 
     paths[pathName] = pathConfig;
@@ -149,21 +132,17 @@ function buildCameraPaths(cameras) {
 
 /**
  * Builds configuration for a single camera path
- * @param {Object} cam - Camera record from database
+ * @param {Object} cam - Camera record from DynamoDB
  * @returns {Object} Path configuration object
  */
 function buildCameraPathConfig(cam) {
   const pathConfig = {};
 
-  // Build source URL based on camera stream type
   if ((cam.streamType === "RTSP" || cam.streamType === "WEBRTC") && cam.ip) {
-    // RTSP camera or WebRTC camera with IP address (both need RTSP source)
     pathConfig.source = buildRTSPUrl(cam);
   } else if (cam.streamType === "HLS" && cam.hlsUrl) {
-    // Direct HLS URL
     pathConfig.source = cam.hlsUrl;
   }
-  // For cameras without source info, leave empty (on-demand publishing)
 
   return pathConfig;
 }
@@ -179,12 +158,10 @@ function buildRTSPUrl(cam) {
   const port = cam.port || "554";
   let streamPath = cam.streamPath || "/live";
 
-  // Ensure streamPath starts with /
   if (streamPath && !streamPath.startsWith("/")) {
     streamPath = "/" + streamPath;
   }
 
-  // Build authentication part
   const auth = username && password ? `${username}:${password}@` : "";
 
   return `rtsp://${auth}${cam.ip}:${port}${streamPath}`;
@@ -197,9 +174,9 @@ function buildRTSPUrl(cam) {
  */
 export function sanitizePathName(name) {
   return name
-    .replace(/\s+/g, "_") // Replace spaces with underscores
-    .replace(/[^a-zA-Z0-9_-]/g, "") // Remove special characters
-    .toLowerCase(); // Convert to lowercase for consistency
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_-]/g, "")
+    .toLowerCase();
 }
 
 /**
@@ -207,7 +184,6 @@ export function sanitizePathName(name) {
  * @returns {string} Server IP address
  */
 export function detectServerIP() {
-  // ✅ Prefer explicit override, then real LAN, then fall back to loopback
   const envIP = process.env.MEDIAMTX_SERVER_IP;
   if (envIP && envIP !== "auto") {
     log.info(`Using MEDIAMTX_SERVER_IP from environment: ${envIP}`);
@@ -215,17 +191,13 @@ export function detectServerIP() {
   }
 
   const interfaces = os.networkInterfaces();
-
-  // Priority order for interface names (common naming conventions)
   const priorityPrefixes = ["eth", "en", "wlan", "wlp"];
 
-  // First pass: look for priority interfaces
   for (const prefix of priorityPrefixes) {
     for (const [name, addresses] of Object.entries(interfaces)) {
       if (!name.startsWith(prefix)) continue;
 
       for (const addr of addresses) {
-        // Skip internal and IPv6 addresses
         if (!addr.internal && addr.family === "IPv4") {
           log.info(`Detected IP from interface ${name}: ${addr.address}`);
           return addr.address;
@@ -234,7 +206,6 @@ export function detectServerIP() {
     }
   }
 
-  // Second pass: any non-internal IPv4
   for (const [name, addresses] of Object.entries(interfaces)) {
     for (const addr of addresses) {
       if (!addr.internal && addr.family === "IPv4") {
@@ -244,55 +215,6 @@ export function detectServerIP() {
     }
   }
 
-  // Fallback to localhost
   log.warn("Could not detect LAN IP, falling back to 127.0.0.1");
   return "127.0.0.1";
-}
-
-/**
- * Updates existing camera records with auto-generated fields
- * @param {number} cameraId - Camera ID to update
- * @returns {Promise<Object>} Updated camera record
- */
-export async function updateCameraStreamFields(cameraId) {
-  const serverIP = detectServerIP();
-
-  const camera = await prisma.camera.findUnique({
-    where: { id: cameraId },
-  });
-
-  if (!camera) {
-    throw new Error(`Camera with ID ${cameraId} not found`);
-  }
-
-  // Auto-populate streamName, streamPath, and webrtcBase if not already set
-  const updates = {};
-
-  if (!camera.streamName) {
-    updates.streamName = sanitizePathName(camera.name);
-  }
-
-  if (!camera.streamPath) {
-    updates.streamPath = "/live";
-  }
-
-  if (!camera.webrtcBase) {
-    updates.webrtcBase = `http://${serverIP}:8889`;
-  }
-
-  if (Object.keys(updates).length > 0) {
-    const updated = await prisma.camera.update({
-      where: { id: cameraId },
-      data: updates,
-    });
-
-    log.info(
-      { cameraId, updates },
-      "Updated camera with auto-generated fields"
-    );
-
-    return updated;
-  }
-
-  return camera;
 }
