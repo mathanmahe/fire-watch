@@ -27,7 +27,7 @@ export default function Login() {
       <div className="login-card">
         <div className="login-brand">
           <img
-            src="/images/fire-icon.png"
+            src="./fire-icon.png"
             alt="FireWatch Logo"
             className="login-logo"
           />
