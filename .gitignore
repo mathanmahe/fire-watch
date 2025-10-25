@@ -11,3 +11,4 @@ frontend/dist-electron/
 *.framework
 vids/*.mp4
 sample_sns.py
+backend/.env
