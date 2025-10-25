@@ -27,11 +27,15 @@ export default function Login() {
       <div className="login-card">
         <div className="login-brand">
           <img
-            src="./fire-icon.png"
+            src="./fire_ai_logo.png"
             alt="FireWatch Logo"
             className="login-logo"
           />
-          <h1>FireWatch</h1>
+          <img
+            src="./fire_ai_text.png"
+            alt="FireWatch"
+            className="login-text"
+          />
         </div>
         <p className="sub">Sign in to continue</p>
 

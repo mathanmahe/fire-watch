@@ -396,6 +396,13 @@ body {
   object-fit: contain;
 }
 
+.brand-text {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+  margin-top: 8px;
+}
+
 .sidenav nav {
   display: flex;
   flex-direction: column;
@@ -485,6 +492,13 @@ body {
   letter-spacing: 0.3px;
   color: var(--accent);
   text-shadow: 0 2px 8px var(--brand-orange-shadow);
+}
+
+.toolbar-text {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px var(--brand-orange-shadow));
 }
 
 .toolbar-nav {
@@ -2444,6 +2458,12 @@ body {
   animation: logoFloat 3s ease-in-out infinite;
 }
 
+.login-text {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
 @keyframes logoFloat {
   0%,
   100% {
@@ -2620,6 +2640,9 @@ body {
   .login-logo {
     width: 64px;
     height: 64px;
+  }
+  .login-text {
+    height: 32px;
   }
 }
 
@@ -2819,6 +2842,9 @@ body {
   .toolbar-title {
     font-size: 36px;
   }
+  .toolbar-text {
+    height: 36px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -2835,6 +2861,9 @@ body {
   }
   .toolbar-title {
     font-size: 30px;
+  }
+  .toolbar-text {
+    height: 30px;
   }
   .toolbar-nav {
     gap: 6px;

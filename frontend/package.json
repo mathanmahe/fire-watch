@@ -35,8 +35,8 @@
     "wait-on": "^8.0.1"
   },
   "build": {
-    "appId": "com.firewatch.app",
-    "productName": "FireWatch",
+    "appId": "com.fireai.app",
+    "productName": "FireAI",
     "directories": {
       "output": "dist-electron"
     },
@@ -73,17 +73,17 @@
     "mac": {
       "category": "public.app-category.utilities",
       "target": "dmg",
-      "icon": "dist/fire-icon.png",
+      "icon": "dist/fire_ai_logo.png",
       "hardenedRuntime": false,
       "gatekeeperAssess": false
     },
     "win": {
       "target": "nsis",
-      "icon": "dist/fire-icon.png"
+      "icon": "dist/fire_ai_logo.png"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "dist/fire-icon.png",
+      "icon": "dist/fire_ai_logo.png",
       "category": "Utility"
     },
     "nsis": {

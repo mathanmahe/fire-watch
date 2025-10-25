@@ -12,11 +12,15 @@ export default function SideNav({ onNavigate, onLogout, currentPage }) {
     <aside className="sidenav">
       <div className="brand">
         <img
-          src="./fire-icon.png"
+          src="./fire_ai_logo.png"
           alt="Fire Watch Logo"
           className="brand-logo"
         />
-        FireWatch
+        <img
+          src="./fire_ai_text.png"
+          alt="FireWatch"
+          className="brand-text"
+        />
       </div>
       <nav>
         <a
