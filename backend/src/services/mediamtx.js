@@ -36,14 +36,14 @@ function getConfigPath() {
   }
 }
 
-export async function startMediaMTX() {
+export async function startMediaMTX(userId = null) {
   // STEP 1: Generate MediaMTX config
   try {
     log.info("Generating MediaMTX configuration from database...");
     
     // ✅ Generate config in accessible location
     const configPath = getConfigPath();
-    const result = await generateMediaMTXConfig(configPath);
+    const result = await generateMediaMTXConfig(configPath, userId);
     
     log.info(
       {
