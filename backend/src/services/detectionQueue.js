@@ -6,6 +6,9 @@ import {
   isStreamActive,
 } from "./streamManager.js";
 
+import { sendFireAlert } from "./snsService.js";
+import { uploadFireFrame } from "./s3Service.js";
+
 const log = pino({ name: "detection-queue" });
 
 // -------------------------------------------------------------------
@@ -39,10 +42,7 @@ export function setBroadcastFunction(fn) {
 export function addCameraToQueue(camera) {
   const exists = cameraQueue.find((c) => c.id === camera.id);
   if (exists) {
-    log.warn(
-      { id: camera.id, name: camera.name },
-      "Camera already in queue"
-    );
+    log.warn({ id: camera.id, name: camera.name }, "Camera already in queue");
     return;
   }
 
@@ -184,12 +184,38 @@ async function startQueueLoop() {
 
         // Broadcast to WebSocket
         if (broadcastFireDetection) {
-          broadcastFireDetection(
-            camera.userId,
-            camera.id,
-            camera.name,
-            true
-          );
+          broadcastFireDetection(camera.userId, camera.id, camera.name, true);
+        }
+
+        // Send SNS Alert with Frame
+        if (result.frameBuffer) {
+          try {
+            // Upload frame to S3
+            const imageUrl = await uploadFireFrame(
+              camera.id,
+              result.frameBuffer
+            );
+
+            // Send SNS alert to user's email
+            await sendFireAlert(
+              camera.userId,
+              camera.id,
+              camera.name,
+              result,
+              imageUrl
+            );
+
+            log.info("✅ SNS alert with image sent successfully");
+          } catch (error) {
+            log.error(
+              {
+                userId: camera.userId,
+                cameraId: camera.id,
+                error: error.message,
+              },
+              "❌ SNS alert with image failed"
+            );
+          }
         }
       } else {
         // ✅ No fire detected - just update state
