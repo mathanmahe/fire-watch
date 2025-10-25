@@ -150,11 +150,15 @@ export default function Status({ onNavigate, currentPage = "status" }) {
         <header className="toolbar">
           <div className="toolbar-brand">
             <img
-              src="/images/fire-icon.png"
+              src="./fire_ai_logo.png"
               alt="FireWatch Logo"
               className="toolbar-logo"
             />
-            <span className="toolbar-title">FireWatch</span>
+            <img
+              src="./fire_ai_text.png"
+              alt="FireWatch"
+              className="toolbar-text"
+            />
           </div>
 
           <nav className="toolbar-nav">

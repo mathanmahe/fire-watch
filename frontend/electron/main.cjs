@@ -16,7 +16,7 @@
 //       enableRemoteModule: false,
 //       preload: path.join(__dirname, "preload.cjs"),
 //     },
-//     icon: path.join(__dirname, "../images/fire-icon.png"),
+//     icon: path.join(__dirname, "../images/fire_ai_logo.png"),
 //     titleBarStyle: "default",
 //     show: false,
 //   });
@@ -104,7 +104,7 @@ function ensureDir(p) {
 
 function logPaths() {
   // Electron exposes a per-app logs dir
-  const logsDir = app.getPath("logs"); // e.g. ~/Library/Logs/FireWatch
+  const logsDir = app.getPath("logs"); // e.g. ~/Library/Logs/FireAI
   ensureDir(logsDir);
   return {
     dir: logsDir,
@@ -150,7 +150,7 @@ function createWindow() {
       enableRemoteModule: false,
       preload: path.join(__dirname, "preload.cjs"),
     },
-    icon: path.join(__dirname, "../images/fire-icon.png"),
+    icon: path.join(__dirname, "../dist/fire_ai_logo.png"),
     titleBarStyle: "default",
     show: false,
   });
@@ -202,15 +202,17 @@ function startBackend() {
 
   // ✅ FIX: Build proper PATH with common binary locations
   const systemPaths = [
-    '/usr/local/bin',
-    '/usr/bin',
-    '/bin',
-    '/opt/homebrew/bin',
-    '/opt/local/bin',
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/opt/homebrew/bin",
+    "/opt/local/bin",
   ];
-  
-  const currentPath = process.env.PATH || '';
-  const newPath = [...systemPaths, ...currentPath.split(':')].filter(Boolean).join(':');
+
+  const currentPath = process.env.PATH || "";
+  const newPath = [...systemPaths, ...currentPath.split(":")]
+    .filter(Boolean)
+    .join(":");
 
   backendProcess = spawn(command, args, {
     cwd: backendPath,
