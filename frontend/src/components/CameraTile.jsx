@@ -540,6 +540,9 @@ export default function CameraTile({ cam }) {
   const [showSpinner, setShowSpinner] = useState(false);
   const { updateCameraStatus } = useCameras();
 
+  // Flag to control local detection - set to false to disable local detection
+  const isStartLocalDetection = false;
+
   // keep detector instance for local mode
   const detectorRef = useRef(null);
   // cloud interval/abort
@@ -763,7 +766,7 @@ export default function CameraTile({ cam }) {
     // detection wiring
     async function startDetection() {
       if (cancelled) return;
-      if (cam.detection === "LOCAL") {
+      if (cam.detection === "LOCAL" && isStartLocalDetection) {
         console.log(`[${cam.name}] Starting local detection...`);
         const VideoDetector = await loadVideoDetector();
         if (cancelled) return;
