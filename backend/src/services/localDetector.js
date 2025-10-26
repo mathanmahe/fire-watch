@@ -221,6 +221,7 @@ export async function detectFire(cameraUrl, cameraName) {
       boxes: result.boxes,
       fireCount: result.fireCount,
       smokeCount: result.smokeCount,
+      frameBuffer: jpegBuffer,
     };
   } catch (error) {
     log.error({ 
@@ -233,6 +234,7 @@ export async function detectFire(cameraUrl, cameraName) {
       confidence: 0,
       boxes: [],
       error: error.message,
+      frameBuffer: null,
     };
   }
 }
