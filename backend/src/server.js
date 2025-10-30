@@ -142,9 +142,16 @@ wss.on("connection", async (ws, req) => {
 // -------------------------------------------------------------------
 // 🔥 Broadcast helper for fire detection
 // -------------------------------------------------------------------
-export function broadcastFireDetection(userId, id, cameraName, isFire) {
+export function broadcastFireDetection(userId, id, cameraName, isFire, metadata = {}) {
   log.info(
-    { userId, id, cameraName, isFire, totalUsers: wsClients.size },
+    { 
+      userId, 
+      id, 
+      cameraName, 
+      isFire, 
+      totalUsers: wsClients.size,
+      hasMetadata: Object.keys(metadata).length > 0
+    },
     "🔥 broadcastFireDetection called"
   );
 
@@ -158,16 +165,18 @@ export function broadcastFireDetection(userId, id, cameraName, isFire) {
     return;
   }
 
+  // ✅ Include optional metadata (IoU analysis, motion info, etc.)
   const payload = JSON.stringify({
     type: "fire-detection",
     cameraId: id,
     cameraName,
     isFire,
     timestamp: new Date().toISOString(),
+    ...metadata  // Spread any additional metadata (iouAnalysis, motionAnalysis, etc.)
   });
 
   log.info(
-    { userId, id, clientCount: clients.size, payload },
+    { userId, id, clientCount: clients.size, payloadSize: payload.length },
     "📡 Sending to WebSocket clients"
   );
 
