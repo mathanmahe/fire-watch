@@ -28,7 +28,8 @@ const ViewingStatusIcon = ({ isVisible }) => {
 };
 
 export default function Status({ onNavigate, currentPage = "status" }) {
-  const { cameras, deleteCamera } = useCameras();
+  const { cameras, deleteCamera, updateCamera, fetchCamerasFromDB } =
+    useCameras();
   const { logout } = useAuth();
   const [showAdd, setShowAdd] = useState(false);
   const [theme, setTheme] = useState(
@@ -40,6 +41,7 @@ export default function Status({ onNavigate, currentPage = "status" }) {
   const [animatingOutIds, setAnimatingOutIds] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [togglingDetection, setTogglingDetection] = useState(new Set());
 
   const handleNavigate = (page) => {
     if (onNavigate) {
@@ -49,11 +51,19 @@ export default function Status({ onNavigate, currentPage = "status" }) {
 
   const onToggleTheme = () => setTheme(toggleTheme());
 
-  const handleEditClick = (camera) => {
+  const handleEditClick = async (camera) => {
     if (editingCameraId === camera.id) {
-      // Save action - just exit edit mode for now
-      setEditingCameraId(null);
-      setEditedValues({});
+      // Save action - update camera in database
+      try {
+        await updateCamera(camera.id, editedValues);
+        setEditingCameraId(null);
+        setEditedValues({});
+
+        await fetchCamerasFromDB();
+      } catch (error) {
+        console.error("Failed to save camera: ", error);
+        alert(`Failed to save camera: ${error.message}`);
+      }
     } else {
       // Edit action - enter edit mode
       setEditingCameraId(camera.id);
@@ -101,6 +111,26 @@ export default function Status({ onNavigate, currentPage = "status" }) {
         return newSet;
       });
       alert(`Failed to delete camera: ${error.message}`);
+    }
+  };
+
+  const handleToggleDetection = async (cameraId, currentDetection) => {
+    const newDetection = currentDetection === "CLOUD" ? "LOCAL" : "CLOUD";
+
+    setTogglingDetection((prev) => new Set([...prev, cameraId]));
+    try {
+      await updateCamera(cameraId, { detection: newDetection });
+
+      await fetchCamerasFromDB();
+    } catch (error) {
+      console.error("Failed to toggle detection: ", error);
+      alert(`Failed to toggle detection: ${error.message}`);
+    } finally {
+      setTogglingDetection((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(cameraId);
+        return newSet;
+      });
     }
   };
 
@@ -298,6 +328,7 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                     <div className="header-cell view-col">View</div>
                     <div className="header-cell stream-col">Stream</div>
                     <div className="header-cell fire-col">Fire</div>
+                    <div className="header-cell detection-col">Detection</div>
                     <div className="header-cell actions-col">Actions</div>
                   </div>
                   <div className="modern-table-body">
@@ -400,6 +431,34 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                             ) : (
                               <FireStatusButton isFire={false} />
                             )}
+                          </div>
+                          <div className="table-cell detection-col">
+                            <span className="cell-label">Detection</span>
+                            <button
+                              className={`detection-toggle-btn ${(
+                                c.detection || "LOCAL"
+                              ).toLowerCase()} ${
+                                togglingDetection.has(c.id) ? "updating" : ""
+                              }`}
+                              onClick={() =>
+                                handleToggleDetection(
+                                  c.id,
+                                  c.detection || "LOCAL"
+                                )
+                              }
+                              disabled={togglingDetection.has(c.id)}
+                              title={`Switch to ${
+                                (c.detection || "LOCAL") === "LOCAL"
+                                  ? "CLOUD"
+                                  : "LOCAL"
+                              } detection`}
+                            >
+                              {togglingDetection.has(c.id)
+                                ? "⏳"
+                                : (c.detection || "LOCAL") === "CLOUD"
+                                ? "☁️ Cloud"
+                                : "💻 Local"}
+                            </button>
                           </div>
                           <div className="table-cell actions-col">
                             <span className="cell-label">Actions</span>
