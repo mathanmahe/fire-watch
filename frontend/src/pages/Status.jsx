@@ -15,6 +15,7 @@ import {
 import { ImFire } from "react-icons/im";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { toggleTheme } from "../utils/theme.js";
+import { cameraApi } from "../services/cameraApi.js";
 
 const ViewingStatusIcon = ({ isVisible }) => {
   return (
@@ -42,6 +43,8 @@ export default function Status({ onNavigate, currentPage = "status" }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [togglingDetection, setTogglingDetection] = useState(new Set());
+  const [samplingRate, setSamplingRate] = useState(30000); // Default 30 seconds
+  const [updatingSamplingRate, setUpdatingSamplingRate] = useState(false);
 
   const handleNavigate = (page) => {
     if (onNavigate) {
@@ -174,6 +177,50 @@ export default function Status({ onNavigate, currentPage = "status" }) {
     setSearchQuery("");
   };
 
+  // Fetch user's sampling rate on mount
+  React.useEffect(() => {
+    const fetchSamplingRate = async () => {
+      try {
+        const data = await cameraApi.request("/api/user/settings");
+        setSamplingRate(data.samplingRate);
+      } catch (error) {
+        console.error("Failed to fetch sampling rate:", error);
+      }
+    };
+
+    fetchSamplingRate();
+  }, []);
+
+  // Handle sampling rate change
+  const handleSamplingRateChange = async (newRate) => {
+    setUpdatingSamplingRate(true);
+    try {
+      const data = await cameraApi.request("/api/user/settings/sampling-rate", {
+        method: "PUT",
+        body: JSON.stringify({ samplingRate: newRate }),
+      });
+
+      setSamplingRate(data.samplingRate);
+      console.log("Sampling rate updated successfully:", data);
+    } catch (error) {
+      console.error("Failed to update sampling rate:", error);
+      alert(`Failed to update sampling rate: ${error.message}`);
+    } finally {
+      setUpdatingSamplingRate(false);
+    }
+  };
+
+  // Sampling rate options
+  const samplingRateOptions = [
+    { value: 10000, label: "10s" },
+    { value: 20000, label: "20s" },
+    { value: 30000, label: "30s" },
+    { value: 60000, label: "1m" },
+    { value: 120000, label: "2m" },
+    { value: 300000, label: "5m" },
+    { value: 600000, label: "10m" },
+  ];
+
   return (
     <div className="shell">
       <main className="main">
@@ -271,6 +318,27 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                 >
                   Clear
                 </button>
+              </div>
+
+              <div className="sampling-rate-container">
+                <label className="sampling-rate-label">Detect Every:</label>
+                <select
+                  className="sampling-rate-select"
+                  value={samplingRate}
+                  onChange={(e) =>
+                    handleSamplingRateChange(Number(e.target.value))
+                  }
+                  disabled={updatingSamplingRate}
+                >
+                  {samplingRateOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {updatingSamplingRate && (
+                  <span className="sampling-rate-updating">⏳</span>
+                )}
               </div>
 
               <div className="add-camera-container">
