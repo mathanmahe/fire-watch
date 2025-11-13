@@ -43,7 +43,7 @@ export async function getUser(userId) {
 /**
  * Create user with default settings
  */
-export async function createUser(userId, defaultSamplingRate = 10000) {
+export async function createUser(userId, defaultSamplingRate = 30000) {
   const item = {
     userId,
     samplingRate: defaultSamplingRate,
@@ -68,7 +68,7 @@ export async function createUser(userId, defaultSamplingRate = 10000) {
 /**
  * Get user or create if doesn't exist (ensures user always exists)
  */
-export async function ensureUser(userId, defaultSamplingRate = 10000) {
+export async function ensureUser(userId, defaultSamplingRate = 30000) {
   try {
     let user = await getUser(userId);
 
@@ -113,7 +113,7 @@ export async function updateUserSamplingRate(userId, samplingRate) {
 /**
  * Get user's sampling rate (returns default if user doesn't exist)
  */
-export async function getUserSamplingRate(userId, defaultSamplingRate = 10000) {
+export async function getUserSamplingRate(userId, defaultSamplingRate = 30000) {
   try {
     const user = await getUser(userId);
     return user?.samplingRate || defaultSamplingRate;
