@@ -1866,6 +1866,78 @@ body {
   border-color: var(--muted);
 }
 
+/* Sampling rate selector */
+.sampling-rate-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sampling-rate-label {
+  color: var(--on-surface);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sampling-rate-select {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: var(--on-surface);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 80px;
+}
+
+[data-theme="dark"] .sampling-rate-select {
+  background: #44475a;
+  border: 1px solid #6272a4;
+  color: #f8f8f2;
+}
+
+.sampling-rate-select:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--border);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .sampling-rate-select:hover:not(:disabled) {
+  background: #6272a4;
+  border-color: #8be9fd;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(40, 42, 54, 0.2);
+}
+
+.sampling-rate-select:focus {
+  outline: 2px solid var(--brand-purple);
+  outline-offset: 2px;
+  border-color: var(--brand-purple);
+}
+
+.sampling-rate-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sampling-rate-updating {
+  font-size: 18px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Add Camera button styling in status panel header */
 .status-panel-header .view-btn {
   background: rgba(255, 255, 255, 0.85);
