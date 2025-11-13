@@ -13,6 +13,7 @@ import {
   isMediaMTXRunning,
 } from "./services/mediamtx.js";
 import { cameras as camerasRouter } from "./routes/cameras.js";
+import { user as userRouter } from "./routes/user.js";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
 import {
   startDetectionQueue,
@@ -32,7 +33,7 @@ const __dirname = path.dirname(__filename);
 // ===================================================================
 // 🔧 Configuration Constants
 // ===================================================================
-const DEFAULT_SAMPLING_RATE = 10000; // 10 seconds default sampling window
+const DEFAULT_SAMPLING_RATE = 30000; // 30 seconds default sampling window
 
 // ✅ Track current user (starts as null, set dynamically on login)
 let currentUserId = null;
@@ -260,6 +261,7 @@ app.get("/healthz", async (_req, res) => {
 
 app.use("/api", requireAuth);
 app.use("/api/cameras", camerasRouter);
+app.use("/api/user", userRouter);
 
 // Handle React Router (catch all handler for SPA)
 app.get("*", (req, res) => {
