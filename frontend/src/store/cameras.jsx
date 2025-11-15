@@ -366,6 +366,39 @@ export function CamerasProvider({ children }) {
     []
   );
 
+  const updateCamera = useMemo(
+    () => async (cameraId, updates) => {
+      if (USE_SEED_DATA) {
+        // Seed mode: just update local state
+        setCameras((prev) =>
+          prev.map((cam) =>
+            cam.id === cameraId ? { ...cam, ...updates } : cam
+          )
+        );
+        console.log("[Seed Mode] Updated camera locally:", cameraId, updates);
+      } else {
+        // DB mode: update in database via API
+        try {
+          console.log(
+            "[DB Mode] Updating camera in database:",
+            cameraId,
+            updates
+          );
+          const updatedCamera = await cameraApi.updateCamera(cameraId, updates);
+          console.log("[DB Mode] ✓ Camera updated successfully");
+
+          setCameras((prev) =>
+            prev.map((cam) => (cam.id === cameraId ? updatedCamera : cam))
+          );
+        } catch (err) {
+          console.error("[DB mode] ✗ Failed to update camera:", err);
+          throw new Error("Failed to update camera in database.");
+        }
+      }
+    },
+    []
+  );
+
   const camerasWithStatus = useMemo(
     () =>
       cameras.map((cam) => ({
@@ -383,6 +416,7 @@ export function CamerasProvider({ children }) {
       addCamera,
       setCameras,
       updateCameraStatus,
+      updateCamera,
       toggleCameraVisibility,
       setCameraVisibilities,
       setCameraVisibilityById,
@@ -397,6 +431,7 @@ export function CamerasProvider({ children }) {
       camerasWithStatus,
       addCamera,
       updateCameraStatus,
+      updateCamera,
       toggleCameraVisibility,
       setCameraVisibilities,
       setCameraVisibilityById,

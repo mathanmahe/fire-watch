@@ -15,6 +15,7 @@ import {
 import { ImFire } from "react-icons/im";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { toggleTheme } from "../utils/theme.js";
+import { cameraApi } from "../services/cameraApi.js";
 
 const ViewingStatusIcon = ({ isVisible }) => {
   return (
@@ -28,7 +29,8 @@ const ViewingStatusIcon = ({ isVisible }) => {
 };
 
 export default function Status({ onNavigate, currentPage = "status" }) {
-  const { cameras, deleteCamera } = useCameras();
+  const { cameras, deleteCamera, updateCamera, fetchCamerasFromDB } =
+    useCameras();
   const { logout } = useAuth();
   const [showAdd, setShowAdd] = useState(false);
   const [theme, setTheme] = useState(
@@ -40,6 +42,9 @@ export default function Status({ onNavigate, currentPage = "status" }) {
   const [animatingOutIds, setAnimatingOutIds] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [togglingDetection, setTogglingDetection] = useState(new Set());
+  const [samplingRate, setSamplingRate] = useState(30000); // Default 30 seconds
+  const [updatingSamplingRate, setUpdatingSamplingRate] = useState(false);
 
   const handleNavigate = (page) => {
     if (onNavigate) {
@@ -49,11 +54,19 @@ export default function Status({ onNavigate, currentPage = "status" }) {
 
   const onToggleTheme = () => setTheme(toggleTheme());
 
-  const handleEditClick = (camera) => {
+  const handleEditClick = async (camera) => {
     if (editingCameraId === camera.id) {
-      // Save action - just exit edit mode for now
-      setEditingCameraId(null);
-      setEditedValues({});
+      // Save action - update camera in database
+      try {
+        await updateCamera(camera.id, editedValues);
+        setEditingCameraId(null);
+        setEditedValues({});
+
+        await fetchCamerasFromDB();
+      } catch (error) {
+        console.error("Failed to save camera: ", error);
+        alert(`Failed to save camera: ${error.message}`);
+      }
     } else {
       // Edit action - enter edit mode
       setEditingCameraId(camera.id);
@@ -104,6 +117,23 @@ export default function Status({ onNavigate, currentPage = "status" }) {
     }
   };
 
+  const handleDetectionChange = async (cameraId, newDetection) => {
+    setTogglingDetection((prev) => new Set([...prev, cameraId]));
+    try {
+      await updateCamera(cameraId, { detection: newDetection });
+      await fetchCamerasFromDB();
+    } catch (error) {
+      console.error("Failed to update detection: ", error);
+      alert(`Failed to update detection: ${error.message}`);
+    } finally {
+      setTogglingDetection((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(cameraId);
+        return newSet;
+      });
+    }
+  };
+
   // Filter and search cameras
   const visibleCameras = useMemo(() => {
     let filtered = cameras.filter((c) => !deletedCameraIds.has(c.id));
@@ -143,6 +173,50 @@ export default function Status({ onNavigate, currentPage = "status" }) {
     setFilter("all");
     setSearchQuery("");
   };
+
+  // Fetch user's sampling rate on mount
+  React.useEffect(() => {
+    const fetchSamplingRate = async () => {
+      try {
+        const data = await cameraApi.request("/api/user/settings");
+        setSamplingRate(data.samplingRate);
+      } catch (error) {
+        console.error("Failed to fetch sampling rate:", error);
+      }
+    };
+
+    fetchSamplingRate();
+  }, []);
+
+  // Handle sampling rate change
+  const handleSamplingRateChange = async (newRate) => {
+    setUpdatingSamplingRate(true);
+    try {
+      const data = await cameraApi.request("/api/user/settings/sampling-rate", {
+        method: "PUT",
+        body: JSON.stringify({ samplingRate: newRate }),
+      });
+
+      setSamplingRate(data.samplingRate);
+      console.log("Sampling rate updated successfully:", data);
+    } catch (error) {
+      console.error("Failed to update sampling rate:", error);
+      alert(`Failed to update sampling rate: ${error.message}`);
+    } finally {
+      setUpdatingSamplingRate(false);
+    }
+  };
+
+  // Sampling rate options
+  const samplingRateOptions = [
+    { value: 10000, label: "10s" },
+    { value: 20000, label: "20s" },
+    { value: 30000, label: "30s" },
+    { value: 60000, label: "1m" },
+    { value: 120000, label: "2m" },
+    { value: 300000, label: "5m" },
+    { value: 600000, label: "10m" },
+  ];
 
   return (
     <div className="shell">
@@ -243,6 +317,27 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                 </button>
               </div>
 
+              <div className="sampling-rate-container">
+                <label className="sampling-rate-label">Detect Every:</label>
+                <select
+                  className="sampling-rate-select"
+                  value={samplingRate}
+                  onChange={(e) =>
+                    handleSamplingRateChange(Number(e.target.value))
+                  }
+                  disabled={updatingSamplingRate}
+                >
+                  {samplingRateOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {updatingSamplingRate && (
+                  <span className="sampling-rate-updating">⏳</span>
+                )}
+              </div>
+
               <div className="add-camera-container">
                 <button
                   className={`view-btn ${showAdd ? "active" : ""}`}
@@ -298,6 +393,7 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                     <div className="header-cell view-col">View</div>
                     <div className="header-cell stream-col">Stream</div>
                     <div className="header-cell fire-col">Fire</div>
+                    <div className="header-cell detection-col">Detection</div>
                     <div className="header-cell actions-col">Actions</div>
                   </div>
                   <div className="modern-table-body">
@@ -400,6 +496,30 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                             ) : (
                               <FireStatusButton isFire={false} />
                             )}
+                          </div>
+                          <div className="table-cell detection-col">
+                            <span className="cell-label">Detection</span>
+                            <div className="detection-select-wrapper">
+                              <select
+                                className={`detection-select ${(
+                                  c.detection || "LOCAL"
+                                ).toLowerCase()} ${
+                                  togglingDetection.has(c.id) ? "updating" : ""
+                                }`}
+                                value={c.detection || "LOCAL"}
+                                onChange={(e) =>
+                                  handleDetectionChange(c.id, e.target.value)
+                                }
+                                disabled={togglingDetection.has(c.id)}
+                              >
+                                <option value="LOCAL">💻 Local</option>
+                                <option value="CLOUD">☁️ Cloud</option>
+                                <option value="BOTH">🔄 Both</option>
+                              </select>
+                              {togglingDetection.has(c.id) && (
+                                <span className="detection-updating">⏳</span>
+                              )}
+                            </div>
                           </div>
                           <div className="table-cell actions-col">
                             <span className="cell-label">Actions</span>

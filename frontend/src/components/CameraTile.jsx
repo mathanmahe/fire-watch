@@ -540,7 +540,7 @@ export default function CameraTile({ cam }) {
   const [showSpinner, setShowSpinner] = useState(false);
   const { updateCameraStatus } = useCameras();
 
-  // Flag to control local detection - set to false to disable local detection
+  // Flag to control local detection - set to false to disable local detection. Change to true to enable local detection.
   const isStartLocalDetection = false;
 
   // keep detector instance for local mode
@@ -766,7 +766,10 @@ export default function CameraTile({ cam }) {
     // detection wiring
     async function startDetection() {
       if (cancelled) return;
-      if (cam.detection === "LOCAL" && isStartLocalDetection) {
+      if (
+        isStartLocalDetection &&
+        (cam.detection === "LOCAL" || cam.detection === "BOTH")
+      ) {
         console.log(`[${cam.name}] Starting local detection...`);
         const VideoDetector = await loadVideoDetector();
         if (cancelled) return;
@@ -913,22 +916,24 @@ export default function CameraTile({ cam }) {
             startLoop();
           }
         }
-      } else if (cam.detection === "CLOUD") {
-        abortRef.current = startCloudDetect({
-          video: v,
-          endpoint: cam.awsEndpoint,
-          intervalMs: cam.cloudFps ? 1000 / cam.cloudFps : 500, // ~2 fps default
-          onResult: (r) => {
-            if (cancelled) return;
-            const any = !!(r?.isFire || r?.detections?.length > 0);
-            setIsFire(any);
-            // Don't update status for fire detection - keep it separate
-          },
-          onError: (e) => {
-            if (!cancelled) updateStatus(`Cloud error: ${e?.message || e}`);
-          },
-        });
       }
+      // CLOUD DETECTION HANDLED BY BACKEND
+      // else if (cam.detection === "CLOUD") {
+      //   abortRef.current = startCloudDetect({
+      //     video: v,
+      //     endpoint: cam.awsEndpoint,
+      //     intervalMs: cam.cloudFps ? 1000 / cam.cloudFps : 500, // ~2 fps default
+      //     onResult: (r) => {
+      //       if (cancelled) return;
+      //       const any = !!(r?.isFire || r?.detections?.length > 0);
+      //       setIsFire(any);
+      //       // Don't update status for fire detection - keep it separate
+      //     },
+      //     onError: (e) => {
+      //       if (!cancelled) updateStatus(`Cloud error: ${e?.message || e}`);
+      //     },
+      //   });
+      // }
     }
 
     // Only connect and start detection (don't check backendFireDetected here to avoid reconnections)

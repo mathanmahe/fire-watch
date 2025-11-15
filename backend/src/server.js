@@ -13,6 +13,7 @@ import {
   isMediaMTXRunning,
 } from "./services/mediamtx.js";
 import { cameras as camerasRouter } from "./routes/cameras.js";
+import { user as userRouter } from "./routes/user.js";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
 import {
   startDetectionQueue,
@@ -28,6 +29,11 @@ const httpServer = createServer(app);
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// ===================================================================
+// 🔧 Configuration Constants
+// ===================================================================
+const DEFAULT_SAMPLING_RATE = 30000; // 30 seconds default sampling window
 
 // ✅ Track current user (starts as null, set dynamically on login)
 let currentUserId = null;
@@ -64,6 +70,21 @@ wss.on("connection", async (ws, req) => {
       { userId, email: payload.email },
       "✅ User authenticated via WebSocket"
     );
+
+    // ✅ ENSURE USER EXISTS: Create user with default settings if not exists
+    try {
+      const user = await dynamodb.ensureUser(userId, DEFAULT_SAMPLING_RATE);
+      log.info(
+        { userId, samplingRate: user.samplingRate },
+        "📋 User settings loaded/initialized"
+      );
+    } catch (error) {
+      log.error(
+        { error: error.message, userId },
+        "❌ Failed to initialize user settings"
+      );
+      // Continue anyway - don't block connection on settings failure
+    }
 
     // ✅ DYNAMIC USER DETECTION: Switch detection queue for new user
     if (!currentUserId || currentUserId !== userId) {
@@ -240,6 +261,7 @@ app.get("/healthz", async (_req, res) => {
 
 app.use("/api", requireAuth);
 app.use("/api/cameras", camerasRouter);
+app.use("/api/user", userRouter);
 
 // Handle React Router (catch all handler for SPA)
 app.get("*", (req, res) => {

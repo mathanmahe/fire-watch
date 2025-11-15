@@ -17,6 +17,111 @@ const client = new DynamoDBClient({
 const docClient = DynamoDBDocumentClient.from(client);
 
 const CAMERAS_TABLE = process.env.DYNAMODB_CAMERAS_TABLE || "FireWatch-Cameras";
+const USERS_TABLE = process.env.DYNAMODB_USERS_TABLE || "FireWatch-Users";
+
+// ===================================================================
+// USERS OPERATIONS
+// ===================================================================
+
+/**
+ * Get user settings (including sampling rate)
+ */
+export async function getUser(userId) {
+  try {
+    const result = await docClient.send(new GetCommand({
+      TableName: USERS_TABLE,
+      Key: { userId },
+    }));
+
+    return result.Item || null;
+  } catch (error) {
+    log.error({ error: error.message, userId }, "Failed to get user");
+    throw error;
+  }
+}
+
+/**
+ * Create user with default settings
+ */
+export async function createUser(userId, defaultSamplingRate = 30000) {
+  const item = {
+    userId,
+    samplingRate: defaultSamplingRate,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    await docClient.send(new PutCommand({
+      TableName: USERS_TABLE,
+      Item: item,
+    }));
+
+    log.info({ userId, samplingRate: defaultSamplingRate }, "User created with default settings");
+    return item;
+  } catch (error) {
+    log.error({ error: error.message, userId }, "Failed to create user");
+    throw error;
+  }
+}
+
+/**
+ * Get user or create if doesn't exist (ensures user always exists)
+ */
+export async function ensureUser(userId, defaultSamplingRate = 30000) {
+  try {
+    let user = await getUser(userId);
+
+    if (!user) {
+      log.info({ userId }, "User not found, creating with defaults");
+      user = await createUser(userId, defaultSamplingRate);
+    } else {
+      log.info({ userId, samplingRate: user.samplingRate }, "User found");
+    }
+
+    return user;
+  } catch (error) {
+    log.error({ error: error.message, userId }, "Failed to ensure user");
+    throw error;
+  }
+}
+
+/**
+ * Update user sampling rate
+ */
+export async function updateUserSamplingRate(userId, samplingRate) {
+  try {
+    const result = await docClient.send(new UpdateCommand({
+      TableName: USERS_TABLE,
+      Key: { userId },
+      UpdateExpression: "SET samplingRate = :samplingRate, updatedAt = :updatedAt",
+      ExpressionAttributeValues: {
+        ":samplingRate": samplingRate,
+        ":updatedAt": new Date().toISOString(),
+      },
+      ReturnValues: "ALL_NEW",
+    }));
+
+    log.info({ userId, samplingRate }, "User sampling rate updated");
+    return result.Attributes;
+  } catch (error) {
+    log.error({ error: error.message, userId, samplingRate }, "Failed to update sampling rate");
+    throw error;
+  }
+}
+
+/**
+ * Get user's sampling rate (returns default if user doesn't exist)
+ */
+export async function getUserSamplingRate(userId, defaultSamplingRate = 30000) {
+  try {
+    const user = await getUser(userId);
+    return user?.samplingRate || defaultSamplingRate;
+  } catch (error) {
+    log.error({ error: error.message, userId }, "Failed to get user sampling rate");
+    return defaultSamplingRate; // Return default on error
+  }
+}
 
 // ===================================================================
 // ID COUNTER - Get next numeric ID
@@ -218,6 +323,14 @@ export async function getCamerasByIds(userId, cameraIds) {
 }
 
 export const dynamodb = {
+  // User operations
+  getUser,
+  createUser,
+  ensureUser,
+  updateUserSamplingRate,
+  getUserSamplingRate,
+
+  // Camera operations
   createCamera,
   getCamerasByUserId,
   getCamera,
