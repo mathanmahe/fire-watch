@@ -59,8 +59,8 @@ export default function Status({ onNavigate, currentPage = "status" }) {
       // Save action - update camera in database
       try {
         await updateCamera(camera.id, editedValues);
-      setEditingCameraId(null);
-      setEditedValues({});
+        setEditingCameraId(null);
+        setEditedValues({});
 
         await fetchCamerasFromDB();
       } catch (error) {

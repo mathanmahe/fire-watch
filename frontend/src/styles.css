@@ -1930,7 +1930,8 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -3095,7 +3096,8 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -3108,5 +3110,3 @@ body {
 .table-cell.detection-col {
   min-width: 120px;
 }
-
-
