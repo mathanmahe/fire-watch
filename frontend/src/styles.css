@@ -3105,6 +3105,57 @@ body {
   }
 }
 
+/* Detection dropdown styles */
+.detection-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detection-select {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  min-width: 120px;
+  font-family: inherit;
+}
+
+.detection-select:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+}
+
+.detection-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detection-select.local {
+  border-color: #4a90e2;
+}
+
+.detection-select.cloud {
+  border-color: #7b68ee;
+}
+
+.detection-select.both {
+  border-color: #ffa500;
+}
+
+.detection-select.updating {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.detection-updating {
+  font-size: 14px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
 /* Detection column styling */
 .header-cell.detection-col,
 .table-cell.detection-col {

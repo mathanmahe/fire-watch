@@ -117,17 +117,14 @@ export default function Status({ onNavigate, currentPage = "status" }) {
     }
   };
 
-  const handleToggleDetection = async (cameraId, currentDetection) => {
-    const newDetection = currentDetection === "CLOUD" ? "LOCAL" : "CLOUD";
-
+  const handleDetectionChange = async (cameraId, newDetection) => {
     setTogglingDetection((prev) => new Set([...prev, cameraId]));
     try {
       await updateCamera(cameraId, { detection: newDetection });
-
       await fetchCamerasFromDB();
     } catch (error) {
-      console.error("Failed to toggle detection: ", error);
-      alert(`Failed to toggle detection: ${error.message}`);
+      console.error("Failed to update detection: ", error);
+      alert(`Failed to update detection: ${error.message}`);
     } finally {
       setTogglingDetection((prev) => {
         const newSet = new Set(prev);
@@ -502,31 +499,27 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                           </div>
                           <div className="table-cell detection-col">
                             <span className="cell-label">Detection</span>
-                            <button
-                              className={`detection-toggle-btn ${(
-                                c.detection || "LOCAL"
-                              ).toLowerCase()} ${
-                                togglingDetection.has(c.id) ? "updating" : ""
-                              }`}
-                              onClick={() =>
-                                handleToggleDetection(
-                                  c.id,
+                            <div className="detection-select-wrapper">
+                              <select
+                                className={`detection-select ${(
                                   c.detection || "LOCAL"
-                                )
-                              }
-                              disabled={togglingDetection.has(c.id)}
-                              title={`Switch to ${
-                                (c.detection || "LOCAL") === "LOCAL"
-                                  ? "CLOUD"
-                                  : "LOCAL"
-                              } detection`}
-                            >
-                              {togglingDetection.has(c.id)
-                                ? "⏳"
-                                : (c.detection || "LOCAL") === "CLOUD"
-                                ? "☁️ Cloud"
-                                : "💻 Local"}
-                            </button>
+                                ).toLowerCase()} ${
+                                  togglingDetection.has(c.id) ? "updating" : ""
+                                }`}
+                                value={c.detection || "LOCAL"}
+                                onChange={(e) =>
+                                  handleDetectionChange(c.id, e.target.value)
+                                }
+                                disabled={togglingDetection.has(c.id)}
+                              >
+                                <option value="LOCAL">💻 Local</option>
+                                <option value="CLOUD">☁️ Cloud</option>
+                                <option value="BOTH">🔄 Both</option>
+                              </select>
+                              {togglingDetection.has(c.id) && (
+                                <span className="detection-updating">⏳</span>
+                              )}
+                            </div>
                           </div>
                           <div className="table-cell actions-col">
                             <span className="cell-label">Actions</span>
