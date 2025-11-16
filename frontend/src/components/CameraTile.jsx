@@ -571,7 +571,10 @@ export default function CameraTile({ cam }) {
     const updates = { isStreaming };
 
     // Only update isFire if local detection is actually running
-    if (isStartLocalDetection && (cam.detection === "LOCAL" || cam.detection === "BOTH")) {
+    if (
+      isStartLocalDetection &&
+      (cam.detection === "LOCAL" || cam.detection === "BOTH")
+    ) {
       updates.isFire = isFire;
     }
 
