@@ -43,6 +43,7 @@ export default function Status({ onNavigate, currentPage = "status" }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [togglingDetection, setTogglingDetection] = useState(new Set());
+  const [updatingAiType, setUpdatingAiType] = useState(new Set());
   const [samplingRate, setSamplingRate] = useState(30000); // Default 30 seconds
   const [updatingSamplingRate, setUpdatingSamplingRate] = useState(false);
 
@@ -127,6 +128,23 @@ export default function Status({ onNavigate, currentPage = "status" }) {
       alert(`Failed to update detection: ${error.message}`);
     } finally {
       setTogglingDetection((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(cameraId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleAiTypeChange = async (cameraId, newAiType) => {
+    setUpdatingAiType((prev) => new Set([...prev, cameraId]));
+    try {
+      await updateCamera(cameraId, { aiType: newAiType });
+      await fetchCamerasFromDB();
+    } catch (error) {
+      console.error("Failed to update AI type: ", error);
+      alert(`Failed to update AI type: ${error.message}`);
+    } finally {
+      setUpdatingAiType((prev) => {
         const newSet = new Set(prev);
         newSet.delete(cameraId);
         return newSet;
@@ -394,6 +412,7 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                     <div className="header-cell stream-col">Stream</div>
                     <div className="header-cell fire-col">Fire</div>
                     <div className="header-cell detection-col">Detection</div>
+                    <div className="header-cell aitype-col">AI Type</div>
                     <div className="header-cell actions-col">Actions</div>
                   </div>
                   <div className="modern-table-body">
@@ -519,6 +538,27 @@ export default function Status({ onNavigate, currentPage = "status" }) {
                               {togglingDetection.has(c.id) && (
                                 <span className="detection-updating">⏳</span>
                               )}
+                            </div>
+                          </div>
+                          <div className="table-cell aitype-col">
+                            <span className="cell-label">AI Type</span>
+                            <div className="aitype-select-wrapper">
+                              <select
+                                className={`aitype-select ${
+                                  updatingAiType.has(c.id) ? "updating" : ""
+                                }`}
+                                value={c.aiType || "FIRE"}
+                                onChange={(e) =>
+                                  handleAiTypeChange(c.id, e.target.value)
+                                }
+                                disabled={updatingAiType.has(c.id)}
+                              >
+                                <option value="FIRE">🔥 Fire Detect</option>
+                                <option value="INTRUSION">🚶 Intrusion Detect</option>
+                                <option value="CROWD_DENSITY">👥 Crowd Detect</option>
+                                <option value="ANONYMIZATION">🕶️ Blur Faces</option>
+                                <option value="WEAPON">🔫 Weapon Detect</option>
+                              </select>
                             </div>
                           </div>
                           <div className="table-cell actions-col">

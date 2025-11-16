@@ -4,7 +4,7 @@ import {
   addCameraToQueue,
   removeCameraFromQueue,
   getQueueStatus,
-  updateCameraInQueue,   // ⬅️ IMPORTANT: import this
+  updateCameraInQueue, // ⬅️ IMPORTANT: import this
 } from "../services/detectionQueue.js";
 
 import {
@@ -29,7 +29,8 @@ cameras.post("/", async (req, res) => {
       port: req.body.port || null,
       username: req.body.username || null,
       password: req.body.password || null,
-      detection: "LOCAL",
+      detection: "LOCAL", // Force local detection
+      aiType: "FIRE", // Default AI type - user can change later in UI
       streamType: req.body.streamType || "WEBRTC",
       streamName: req.body.streamName || sanitizePathName(req.body.name),
       streamPath: req.body.streamPath || "/live",
@@ -125,10 +126,12 @@ cameras.post("/start-detection", async (req, res) => {
     const { cameraIds } = req.body;
 
     if (!Array.isArray(cameraIds) || cameraIds.length === 0) {
-      return res.status(400).json({ error: "cameraIds must be a non-empty array" });
+      return res
+        .status(400)
+        .json({ error: "cameraIds must be a non-empty array" });
     }
 
-    const ids = cameraIds.map(id => Number(id)).filter(id => !isNaN(id));
+    const ids = cameraIds.map((id) => Number(id)).filter((id) => !isNaN(id));
     if (ids.length === 0) {
       return res.status(400).json({ error: "No valid camera IDs provided" });
     }
@@ -176,10 +179,12 @@ cameras.post("/stop-detection", async (req, res) => {
     const { cameraIds } = req.body;
 
     if (!Array.isArray(cameraIds) || cameraIds.length === 0) {
-      return res.status(400).json({ error: "cameraIds must be a non-empty array" });
+      return res
+        .status(400)
+        .json({ error: "cameraIds must be a non-empty array" });
     }
 
-    const ids = cameraIds.map(id => Number(id)).filter(id => !isNaN(id));
+    const ids = cameraIds.map((id) => Number(id)).filter((id) => !isNaN(id));
 
     if (ids.length === 0) {
       return res.status(400).json({ error: "No valid camera IDs provided" });
@@ -240,10 +245,24 @@ cameras.put("/:id", async (req, res) => {
     const userId = req.user.sub;
     const id = Number(req.params.id);
 
-    // Ensure camera exists
-    await dynamodb.getCamera(userId, id);
+    // Validate aiType if provided
+    if (req.body.aiType) {
+      const validAiTypes = [
+        "FIRE",
+        "INTRUSION",
+        "CROWD_DENSITY",
+        "ANONYMIZATION",
+        "WEAPON",
+      ];
+      if (!validAiTypes.includes(req.body.aiType)) {
+        return res.status(400).json({
+          error: `Invalid aiType. Must be one of: ${validAiTypes.join(", ")}`,
+        });
+      }
+    }
 
-    // Update DB
+    // Get current camera state before update
+    const currentCam = await dynamodb.getCamera(userId, id);
     const cam = await dynamodb.updateCamera(userId, id, req.body);
 
     // 🔥 KEY FIX: UPDATE CAMERA INSIDE detectionQueue
@@ -257,6 +276,20 @@ cameras.put("/:id", async (req, res) => {
       } else {
         removeCameraFromQueue(cam.id);
       }
+    }
+
+    // If aiType changed and camera is active, restart detection
+    if (
+      req.body.aiType &&
+      req.body.aiType !== currentCam.aiType &&
+      cam.isActive
+    ) {
+      removeCameraFromQueue(cam.id);
+      cam.userId = userId;
+      addCameraToQueue(cam);
+      console.log(
+        `✅ Restarted ${cam.name} - aiType changed from ${currentCam.aiType} to ${cam.aiType}`
+      );
     }
 
     res.json(cam);

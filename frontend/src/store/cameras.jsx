@@ -282,10 +282,15 @@ export function CamerasProvider({ children }) {
 
   const updateCameraStatus = useMemo(
     () => (cameraId, status) => {
-      setCameraStatuses((prev) => ({
-        ...prev,
-        [cameraId]: { ...prev[cameraId], ...status },
-      }));
+      console.log(`[Camera Store] 🔥 Updating status for camera ${cameraId}:`, status);
+      setCameraStatuses((prev) => {
+        const newStatuses = {
+          ...prev,
+          [cameraId]: { ...prev[cameraId], ...status },
+        };
+        console.log(`[Camera Store] 📊 New statuses:`, newStatuses);
+        return newStatuses;
+      });
     },
     []
   );
@@ -400,13 +405,18 @@ export function CamerasProvider({ children }) {
   );
 
   const camerasWithStatus = useMemo(
-    () =>
-      cameras.map((cam) => ({
+    () => {
+      const result = cameras.map((cam) => ({
         ...cam,
         isFire: cameraStatuses[cam.id]?.isFire || false,
         isStreaming: cameraStatuses[cam.id]?.isStreaming || false,
         isVisible: cameraVisibility[cam.id] !== false, // default to true if not set
-      })),
+      }));
+      console.log(`[Camera Store] 📹 camerasWithStatus recomputed:`,
+        result.map(c => ({ id: c.id, name: c.name, isFire: c.isFire, isStreaming: c.isStreaming }))
+      );
+      return result;
+    },
     [cameras, cameraStatuses, cameraVisibility]
   );
 

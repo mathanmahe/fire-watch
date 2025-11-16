@@ -2079,7 +2079,7 @@ body {
 
 .modern-table-header {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1.3fr 0.8fr 0.9fr 0.9fr 1fr 1fr 1fr; /* Add 1fr for Detection */
+  grid-template-columns: 1fr 0.9fr 1fr 0.7fr 0.7fr 0.7fr 0.8fr 1fr 1.2fr 0.9fr; /* Name, Location, IP, Port, View, Stream, Fire, Detection, AI Type, Actions */
   gap: 12px;
   padding: 16px 20px;
   background: transparent;
@@ -2106,7 +2106,7 @@ body {
 
 .modern-table-row {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1.3fr 0.8fr 0.9fr 0.9fr 1fr 1fr 1fr; /* Add 1fr for Detection */
+  grid-template-columns: 1fr 0.9fr 1fr 0.7fr 0.7fr 0.7fr 0.8fr 1fr 1.2fr 0.9fr; /* Name, Location, IP, Port, View, Stream, Fire, Detection, AI Type, Actions */
   gap: 12px;
   padding: 18px 20px;
   background: var(--surface-2);
@@ -3113,15 +3113,15 @@ body {
 }
 
 .detection-select {
-  padding: 6px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   transition: all 0.2s;
-  min-width: 120px;
+  width: 100%;
   font-family: inherit;
 }
 
@@ -3156,8 +3156,42 @@ body {
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-/* Detection column styling */
-.header-cell.detection-col,
-.table-cell.detection-col {
-  min-width: 120px;
+/* AI Type dropdown styles */
+.aitype-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aitype-select {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  width: 100%;
+  font-family: inherit;
+}
+
+.aitype-select:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+}
+
+.aitype-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.aitype-select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.aitype-select.updating {
+  animation: pulse 1.5s ease-in-out infinite;
 }

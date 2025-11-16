@@ -23,3 +23,5 @@ paths:
     source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
   test-cam-1:
     source: rtsp://admin:CCTVCheck%40123@10.0.0.142:8554/live
+  cam-2:
+    source: rtsp://admin:CCTVCheck%40123@10.0.0.98:8554/live
