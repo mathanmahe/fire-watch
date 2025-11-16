@@ -32,7 +32,7 @@ function getFfmpegPath() {
 export const cfg = {
   // ✅ NO userId - will be set dynamically on login
   userId: null,
-  
+
   cognito: {
     poolId: process.env.COGNITO_USER_POOL_ID,
     clientId: process.env.COGNITO_CLIENT_ID,
@@ -42,7 +42,19 @@ export const cfg = {
     config: process.env.MEDIAMTX_CONFIG || './mediamtx.yml'
   },
   ffmpeg: getFfmpegPath(),
+
+  // Legacy: Keep for backwards compatibility
   fireEndpoint: process.env.FIRE_ENDPOINT,
+
+  // AI Type endpoints - maps AI types to their respective AWS Lambda endpoints
+  aiTypeEndpoints: {
+    FIRE: process.env.FIRE_ENDPOINT,
+    INTRUSION: process.env.INTRUSION_ENDPOINT,
+    CROWD_DENSITY: process.env.CROWD_DENSITY_ENDPOINT,
+    ANONYMIZATION: process.env.ANONYMIZATION_ENDPOINT,
+    WEAPON: process.env.WEAPON_ENDPOINT,
+  },
+
   port: Number(process.env.PORT || 4000),
   isElectron
 };

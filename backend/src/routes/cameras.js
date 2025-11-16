@@ -29,6 +29,7 @@ cameras.post("/", async (req, res) => {
       username: req.body.username || null,
       password: req.body.password || null,
       detection: "LOCAL", // Force local detection
+      aiType: "FIRE", // Default AI type - user can change later in UI
       streamType: req.body.streamType || "WEBRTC",
       streamName: req.body.streamName || sanitizePathName(req.body.name),
       streamPath: req.body.streamPath || "/live",
@@ -252,7 +253,18 @@ cameras.put("/:id", async (req, res) => {
     const userId = req.user.sub;
     const id = Number(req.params.id);
 
-    await dynamodb.getCamera(userId, id);
+    // Validate aiType if provided
+    if (req.body.aiType) {
+      const validAiTypes = ["FIRE", "INTRUSION", "CROWD_DENSITY", "ANONYMIZATION", "WEAPON"];
+      if (!validAiTypes.includes(req.body.aiType)) {
+        return res.status(400).json({
+          error: `Invalid aiType. Must be one of: ${validAiTypes.join(", ")}`
+        });
+      }
+    }
+
+    // Get current camera state before update
+    const currentCam = await dynamodb.getCamera(userId, id);
     const cam = await dynamodb.updateCamera(userId, id, req.body);
 
     if (req.body.isActive !== undefined) {
@@ -263,6 +275,14 @@ cameras.put("/:id", async (req, res) => {
       } else {
         removeCameraFromQueue(cam.id);
       }
+    }
+
+    // If aiType changed and camera is active, restart detection
+    if (req.body.aiType && req.body.aiType !== currentCam.aiType && cam.isActive) {
+      removeCameraFromQueue(cam.id);
+      cam.userId = userId;
+      addCameraToQueue(cam);
+      console.log(`✅ Restarted ${cam.name} - aiType changed from ${currentCam.aiType} to ${cam.aiType}`);
     }
 
     res.json(cam);
