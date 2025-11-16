@@ -42,9 +42,13 @@ export const cfg = {
     config: process.env.MEDIAMTX_CONFIG || './mediamtx.yml'
   },
   ffmpeg: getFfmpegPath(),
-  fireEndpoint: process.env.FIRE_ENDPOINT,
+  
+  // ✅ ADDED: Fire detection endpoint
+  fireEndpoint: process.env.FIRE_ENDPOINT || 'https://2cwzmjzkx4.execute-api.us-east-1.amazonaws.com/default/fire-frame-receiver',
+  
   port: Number(process.env.PORT || 4000),
   isElectron
 };
 
 console.log('✅ Config loaded - DynamoDB mode (no local database)');
+console.log('🔥 Fire Endpoint:', cfg.fireEndpoint);
