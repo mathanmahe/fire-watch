@@ -510,7 +510,7 @@
 //   );
 // }
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import Hls from "hls.js";
 import { FaSpinner, FaExclamationCircle } from "react-icons/fa";
 import { startCloudDetect, stopCloudDetect } from "../utils/cloudDetect.js";
@@ -554,13 +554,32 @@ export default function CameraTile({ cam }) {
   // Timeout for spinner delay
   const spinnerTimeoutRef = useRef(null);
 
-  // ✅ NEW: Get backend fire status from props (updated by WebSocket)
-  const backendFireDetected = cam.isFire || false;
+  // Sync backend fire status to local state immediately
+  const [backendFireDetected, setBackendFireDetected] = useState(
+    cam.isFire || false
+  );
+
+  // Update local state immediately when cam.isFire changes
+  useEffect(() => {
+    console.log(`[${cam.name}] 🔥 cam.isFire changed to:`, cam.isFire);
+    setBackendFireDetected(cam.isFire || false);
+  }, [cam.isFire, cam.name]);
 
   // Update camera status in store whenever local state changes
+  // NOTE: Only update isFire status if local detection is enabled, to avoid overwriting backend fire detection
   useEffect(() => {
-    updateCameraStatus(cam.id, { isFire, isStreaming });
-  }, [isFire, isStreaming, cam.id, updateCameraStatus]);
+    const updates = { isStreaming };
+
+    // Only update isFire if local detection is actually running
+    if (
+      isStartLocalDetection &&
+      (cam.detection === "LOCAL" || cam.detection === "BOTH")
+    ) {
+      updates.isFire = isFire;
+    }
+
+    updateCameraStatus(cam.id, updates);
+  }, [isFire, isStreaming, cam.id, cam.detection, updateCameraStatus]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -1011,7 +1030,7 @@ export default function CameraTile({ cam }) {
     // NOTE: backendFireDetected NOT included to prevent reconnection on fire status change
   ]);
 
-  // ✅ NEW: Combine backend fire detection with local/cloud detection for display
+  // ✅ Combine backend fire detection with local/cloud detection for display
   const displayFireStatus = backendFireDetected || isFire;
 
   return (
@@ -1023,7 +1042,10 @@ export default function CameraTile({ cam }) {
           <span className="location">{cam.location}</span>
         </div>
         <div className="tile-status-icons">
-          <FireStatusButton isFire={displayFireStatus} />
+          <FireStatusButton
+            isFire={displayFireStatus}
+            key={`fire-${displayFireStatus}`}
+          />
         </div>
       </div>
       <div className="video-wrap" onMouseEnter={() => setViewed(true)}>
