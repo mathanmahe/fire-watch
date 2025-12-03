@@ -16,18 +16,17 @@ let sessionPromise = null;
 
 function getSession() {
   if (!sessionPromise) {
-    // ✅ SWITCH TO RT-DETR MODEL
     const modelPath = path.resolve(__dirname, "../../models/best.onnx");
-    log.info({ modelPath }, "Loading RT-DETR ONNX model...");
+    log.info({ modelPath }, "Loading Fire ONNX model...");
 
     sessionPromise = ort.InferenceSession.create(modelPath, {
       executionProviders: ["cpu"],
     }).then((session) => {
-      log.info("✅ RT-DETR ONNX session ready");
+      log.info("✅ Fire ONNX session ready");
       log.info({ inputNames: session.inputNames, outputNames: session.outputNames }, "Model Metadata");
       return session;
     }).catch((err) => {
-      log.error({ error: err.message }, "❌ Failed to load RT-DETR ONNX model");
+      log.error({ error: err.message }, "❌ Failed to load Fire ONNX model");
       sessionPromise = null;
       throw err;
     });
@@ -74,7 +73,10 @@ function grabFrameOnce(srcUrl) {
 async function prepareInput(jpegBuffer, modelInputSize = 640) {
   try {
     const { data, info } = await sharp(jpegBuffer)
-      .resize(modelInputSize, modelInputSize, { fit: "fill" })
+      .resize(modelInputSize, modelInputSize, {
+        fit: "contain",
+        background: { r: 114, g: 114, b: 114 }
+      })
       .raw()
       .toBuffer({ resolveWithObject: true });
 
@@ -111,7 +113,6 @@ async function runInference(inputTensor) {
     );
 
     // Run inference
-    // Note: We pass the input name dynamically if possible, or assume "images"
     const inputName = session.inputNames[0];
     const feeds = {};
     feeds[inputName] = tensor;
@@ -128,10 +129,6 @@ async function runInference(inputTensor) {
 // 📊 Process RT-DETR Output
 // -------------------------------------------------------------------
 function processOutput(outputs, imgW = 640, imgH = 640) {
-  // RT-DETR output handling
-  // Usually we have 'boxes' and 'scores' or a combined output
-  // We need to inspect the outputs to be sure
-
   let boxes = [];
   let fireCount = 0;
   let smokeCount = 0;
@@ -139,12 +136,6 @@ function processOutput(outputs, imgW = 640, imgH = 640) {
 
   // Debug output keys
   const keys = Object.keys(outputs);
-  // log.debug({ keys }, "Output keys received");
-
-  // Try to find boxes and scores
-  // Common RT-DETR exports:
-  // 1. "boxes" [1, 300, 4] (cx, cy, w, h) and "scores" [1, 300, classes]
-  // 2. Single output [1, 300, 4+classes]
 
   let rawBoxes = null;
   let rawScores = null;
@@ -156,16 +147,12 @@ function processOutput(outputs, imgW = 640, imgH = 640) {
   } else if (keys.length === 1) {
     combined = outputs[keys[0]].data;
   } else {
-    // Fallback: try to guess by shape or name
-    // If we have multiple outputs, maybe one is boxes (size ~ 300*4) and one is scores (size ~ 300*classes)
-    // For now, let's assume standard names or single output
     log.warn({ keys }, "Unknown output format, trying to parse...");
-    // If we can't find it, we might crash or return empty
   }
 
   const numQueries = 300; // Standard RT-DETR query count
   const numClasses = 3; // Fire, Smoke, Other
-  const probThreshold = 0.25; // Confidence threshold
+  const probThreshold = 0.85; // Confidence threshold (Increased to 0.85 to stop false positives)
 
   // Helper to get box coordinates
   const getBox = (i) => {
@@ -223,6 +210,19 @@ function processOutput(outputs, imgW = 640, imgH = 640) {
     return { maxScore, maxClass };
   };
 
+  // DEBUG: Log top 5 scores regardless of threshold
+  const allScores = [];
+  for (let i = 0; i < numQueries; i++) {
+    const { maxScore, maxClass } = getScore(i);
+    allScores.push({ score: maxScore, class: maxClass });
+  }
+  allScores.sort((a, b) => b.score - a.score);
+  const top5 = allScores.slice(0, 5).map(s => ({
+    score: s.score.toFixed(4),
+    label: ["Fire", "Smoke", "Other"][s.class] || "Unknown"
+  }));
+  log.info({ top5 }, "🔥 LOCAL: Top 5 Raw Scores");
+
   for (let i = 0; i < numQueries; i++) {
     const { maxScore, maxClass } = getScore(i);
 
@@ -252,12 +252,6 @@ function processOutput(outputs, imgW = 640, imgH = 640) {
     }
   }
 
-  // RT-DETR is end-to-end, so NMS is technically not needed if the model was trained with Hungarian matching
-  // But sometimes it's good to have a light NMS just in case, or we can skip it.
-  // The user asked to replace YOLO pipeline. YOLO needs NMS. RT-DETR usually doesn't.
-  // I will skip NMS for now, or use a very high threshold if needed.
-  // Actually, let's keep it simple and return the boxes.
-
   // Sort by confidence
   boxes.sort((a, b) => b[5] - a[5]);
 
@@ -286,7 +280,7 @@ export async function detectFire(cameraUrl, cameraName) {
     for (const key in outputs) {
       debugShapes[key] = outputs[key].dims;
     }
-    log.info({ camera: cameraName, outputShapes: debugShapes }, "RT-DETR Inference Output");
+    log.info({ camera: cameraName, outputShapes: debugShapes }, "🔥 LOCAL: RT-DETR Inference Output");
 
     const result = processOutput(outputs, 640, 640);
 
@@ -295,8 +289,8 @@ export async function detectFire(cameraUrl, cameraName) {
       detected: result.detected,
       fireCount: result.fireCount,
       smokeCount: result.smokeCount,
-      boxCount: result.boxes.length
-    }, "Detection complete");
+      boxCount: result.boxes.length,
+    }, "🔥 LOCAL: Detection complete");
 
     return {
       isFire: result.detected,
@@ -309,8 +303,8 @@ export async function detectFire(cameraUrl, cameraName) {
   } catch (error) {
     log.error({
       camera: cameraName,
-      error: error.message
-    }, "Detection failed");
+      error: error.message,
+    }, "🔥 LOCAL: Detection failed");
 
     return {
       isFire: false,
@@ -323,7 +317,7 @@ export async function detectFire(cameraUrl, cameraName) {
 }
 
 // -------------------------------------------------------------------
-// 🎥 Build Camera Input URL (CRITICAL FIX)
+// 🎥 Build Camera Input URL
 // -------------------------------------------------------------------
 export function buildCameraUrl(cam) {
   // ✅ PRIORITY 1: RTSP camera with IP address (YOUR REAL CAMERA)

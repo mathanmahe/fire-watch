@@ -142,33 +142,55 @@ const isDev = !app.isPackaged;
 mlog("🔍 isDev:", isDev);
 mlog("🔍 app.isPackaged:", app.isPackaged);
 
+// ✅ FIX: Build proper PATH with common binary locations
+function getFixPath() {
+  const systemPaths = [
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/usr/sbin",
+    "/sbin",
+    "/opt/homebrew/bin",
+    "/opt/local/bin",
+  ];
+  const currentPath = process.env.PATH || "";
+  return [...systemPaths, ...currentPath.split(path.delimiter)]
+    .filter((item, index, self) => item && self.indexOf(item) === index)
+    .join(path.delimiter);
+}
+
 async function checkDocker() {
+  const fixedPath = getFixPath();
+  mlog("Checking Docker with PATH:", fixedPath);
+
   try {
-    await execPromise("docker --version");
+    await execPromise("docker --version", { env: { ...process.env, PATH: fixedPath } });
     try {
-      await execPromise("docker info");
+      await execPromise("docker info", { env: { ...process.env, PATH: fixedPath } });
       return "running";
     } catch {
       return "not_running";
     }
-  } catch {
+  } catch (e) {
+    mlog("Docker check failed:", e.message);
     return "not_installed";
   }
 }
 
 async function startDocker() {
+  const fixedPath = getFixPath();
   mlog("Attempting to start Docker...");
   if (process.platform === "darwin") {
-    await execPromise("open -a Docker");
+    await execPromise("open -a Docker", { env: { ...process.env, PATH: fixedPath } });
   } else if (process.platform === "win32") {
     const dockerPath = "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe";
     try {
       // Use 'start' to launch without waiting for the process to exit
-      await execPromise(`start "" "${dockerPath}"`);
+      await execPromise(`start "" "${dockerPath}"`, { env: { ...process.env, PATH: fixedPath } });
     } catch (e) {
       mlog("Failed to start via full path, trying generic entry", e);
       // Fallback
-      await execPromise('start "" "Docker Desktop"');
+      await execPromise('start "" "Docker Desktop"', { env: { ...process.env, PATH: fixedPath } });
     }
   } else {
     throw new Error("Unsupported platform for auto-starting Docker");

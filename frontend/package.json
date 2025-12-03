@@ -66,6 +66,10 @@
         ]
       },
       {
+        "from": "../backend/.env",
+        "to": "backend/.env"
+      },
+      {
         "from": "../backend/node_modules",
         "to": "backend/node_modules"
       }

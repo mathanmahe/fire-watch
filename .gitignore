@@ -6,3 +6,4 @@ frontend/dist/
 frontend/dist-electron/
 sample_sns.py
 backend/models/best.onnx
+backend/.env
