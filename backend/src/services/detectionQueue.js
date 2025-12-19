@@ -1,6 +1,7 @@
 import pino from "pino";
 import { detectFire, buildCameraUrl } from "./localDetector.js";
 import { detectWeapon } from "./localWeaponDetector.js";
+import livenessValidator from "./livenessValidator.js";
 import {
   startCameraStream,
   stopCameraStream,
@@ -513,15 +514,37 @@ async function startQueueLoop() {
         let iouAnalysis = null;
 
         if (detectionType === "WEAPON") {
-          // 🔫 WEAPON: Trust the detection (RT-DETR is specific)
-          // We can add IoU later if static posters are an issue.
-          isRealDetection = true;
-          log.info("🔫 WEAPON: Bypassing static IoU check - Immediate Alert");
+          // 🔫 WEAPON: Check Depth (Real 3D vs Fake 2D)
+          const lastFrame = frames[frames.length - 1];
+          if (lastFrame && lastFrame.boxes.length > 0) {
+            const bbox = lastFrame.boxes[0]; // [x1, y1, x2, y2, label, conf]
+            const is3D = await livenessValidator.isWeapon3D(lastFrame.frameBuffer, bbox);
+
+            if (is3D) {
+              isRealDetection = true;
+              log.info("🔫 WEAPON: Liveness Check PASSED (3D Object)");
+            } else {
+              log.warn("⚠️ WEAPON: Liveness Check FAILED (2D/Flat Image) - Ignoring");
+            }
+          }
         } else {
-          // 🔥 FIRE: Perform IoU check to filter static false positives
+          // 🔥 FIRE: Perform IoU check AND Pixel Motion check
           iouAnalysis = analyzeBoxes(frames);
+
           if (!iouAnalysis.isStatic) {
-            isRealDetection = true;
+            // IoU says boxes are moving/shifting (good), now check pixel motion (flicker)
+            const lastFrame = frames[frames.length - 1];
+            const bbox = lastFrame.boxes[0];
+            const frameBuffers = frames.map(f => f.frameBuffer);
+
+            const isFlickering = await livenessValidator.isFireMoving(frameBuffers, bbox);
+
+            if (isFlickering) {
+              isRealDetection = true;
+              log.info("🔥 FIRE: Liveness Check PASSED (Flickering Motion)");
+            } else {
+              log.warn("⚠️ FIRE: Liveness Check FAILED (Static Pixels) - Ignoring");
+            }
           } else {
             log.warn(
               { ...iouAnalysis },

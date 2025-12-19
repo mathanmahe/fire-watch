@@ -34,7 +34,9 @@ class CameraApiService {
       const error = await response
         .json()
         .catch(() => ({ error: "Request failed" }));
-      throw new Error(error.error || `HTTP ${response.status}`);
+
+      console.error("❌ API Error:", error); // Log the full error object
+      throw new Error(error.detail || error.error || `HTTP ${response.status}`);
     }
 
     return response.json();
