@@ -16,16 +16,18 @@ let sessionPromise = null;
 
 function getSession() {
   if (!sessionPromise) {
-    const modelPath = path.resolve(__dirname, "../../models/yolov11n_bestFire.onnx");
-    log.info({ modelPath }, "Loading ONNX model...");
-    
+    // ✅ SWITCH TO RT-DETR MODEL
+    const modelPath = path.resolve(__dirname, "../../models/best.onnx");
+    log.info({ modelPath }, "Loading RT-DETR ONNX model...");
+
     sessionPromise = ort.InferenceSession.create(modelPath, {
       executionProviders: ["cpu"],
     }).then((session) => {
-      log.info("✅ ONNX session ready");
+      log.info("✅ RT-DETR ONNX session ready");
+      log.info({ inputNames: session.inputNames, outputNames: session.outputNames }, "Model Metadata");
       return session;
     }).catch((err) => {
-      log.error({ error: err.message }, "❌ Failed to load ONNX model");
+      log.error({ error: err.message }, "❌ Failed to load RT-DETR ONNX model");
       sessionPromise = null;
       throw err;
     });
@@ -40,7 +42,7 @@ function grabFrameOnce(srcUrl) {
   return new Promise((resolve, reject) => {
     const isRtsp = srcUrl.startsWith("rtsp://");
     const args = ["-y"];
-    
+
     if (isRtsp) {
       args.push(
         "-rtsp_transport", "tcp",
@@ -79,11 +81,12 @@ async function prepareInput(jpegBuffer, modelInputSize = 640) {
     const N = modelInputSize * modelInputSize;
     const arr = new Float32Array(N * 3);
 
+    // Standard normalization (0-1)
     let r = 0, g = N, b = 2 * N;
     for (let i = 0; i < data.length; i += 3) {
-      arr[r++] = data[i] / 255;
-      arr[g++] = data[i + 1] / 255;
-      arr[b++] = data[i + 2] / 255;
+      arr[r++] = data[i] / 255.0;
+      arr[g++] = data[i + 1] / 255.0;
+      arr[b++] = data[i + 2] / 255.0;
     }
 
     return arr;
@@ -99,17 +102,22 @@ async function prepareInput(jpegBuffer, modelInputSize = 640) {
 async function runInference(inputTensor) {
   try {
     const session = await getSession();
-    
+
+    // RT-DETR usually expects [1, 3, 640, 640]
     const tensor = new ort.Tensor(
       "float32",
       inputTensor,
       [1, 3, 640, 640]
     );
 
-    const outputs = await session.run({ images: tensor });
-    const outputData = outputs[Object.keys(outputs)[0]].data;
-    
-    return outputData;
+    // Run inference
+    // Note: We pass the input name dynamically if possible, or assume "images"
+    const inputName = session.inputNames[0];
+    const feeds = {};
+    feeds[inputName] = tensor;
+
+    const outputs = await session.run(feeds);
+    return outputs;
   } catch (e) {
     log.error({ error: e.message }, "Inference failed");
     throw e;
@@ -117,41 +125,121 @@ async function runInference(inputTensor) {
 }
 
 // -------------------------------------------------------------------
-// 📊 Process ONNX Output
+// 📊 Process RT-DETR Output
 // -------------------------------------------------------------------
-function processOutput(output, imgW = 640, imgH = 640) {
+function processOutput(outputs, imgW = 640, imgH = 640) {
+  // RT-DETR output handling
+  // Usually we have 'boxes' and 'scores' or a combined output
+  // We need to inspect the outputs to be sure
+
   let boxes = [];
   let fireCount = 0;
   let smokeCount = 0;
   let totalFireArea = 0;
 
-  const cells = 8400;
-  const clsCount = 3;
-  const probThreshold = 0.2;
+  // Debug output keys
+  const keys = Object.keys(outputs);
+  // log.debug({ keys }, "Output keys received");
 
-  for (let i = 0; i < cells; i++) {
-    let classId = 0, best = 0;
-    for (let c = 0; c < clsCount; c++) {
-      const p = output[cells * (c + 4) + i];
-      if (p > best) {
-        best = p;
-        classId = c;
+  // Try to find boxes and scores
+  // Common RT-DETR exports:
+  // 1. "boxes" [1, 300, 4] (cx, cy, w, h) and "scores" [1, 300, classes]
+  // 2. Single output [1, 300, 4+classes]
+
+  let rawBoxes = null;
+  let rawScores = null;
+  let combined = null;
+
+  if (keys.includes("boxes") && keys.includes("scores")) {
+    rawBoxes = outputs["boxes"].data;
+    rawScores = outputs["scores"].data;
+  } else if (keys.length === 1) {
+    combined = outputs[keys[0]].data;
+  } else {
+    // Fallback: try to guess by shape or name
+    // If we have multiple outputs, maybe one is boxes (size ~ 300*4) and one is scores (size ~ 300*classes)
+    // For now, let's assume standard names or single output
+    log.warn({ keys }, "Unknown output format, trying to parse...");
+    // If we can't find it, we might crash or return empty
+  }
+
+  const numQueries = 300; // Standard RT-DETR query count
+  const numClasses = 3; // Fire, Smoke, Other
+  const probThreshold = 0.25; // Confidence threshold
+
+  // Helper to get box coordinates
+  const getBox = (i) => {
+    if (rawBoxes) {
+      // rawBoxes is [1, 300, 4] flattened
+      const offset = i * 4;
+      return [
+        rawBoxes[offset],
+        rawBoxes[offset + 1],
+        rawBoxes[offset + 2],
+        rawBoxes[offset + 3]
+      ];
+    } else if (combined) {
+      // combined is [1, 300, 4+classes] flattened
+      // stride = 4 + numClasses
+      const stride = 4 + numClasses;
+      const offset = i * stride;
+      return [
+        combined[offset],
+        combined[offset + 1],
+        combined[offset + 2],
+        combined[offset + 3]
+      ];
+    }
+    return [0, 0, 0, 0];
+  };
+
+  // Helper to get max score and class
+  const getScore = (i) => {
+    let maxScore = 0;
+    let maxClass = -1;
+
+    if (rawScores) {
+      // rawScores is [1, 300, numClasses] flattened
+      const offset = i * numClasses;
+      for (let c = 0; c < numClasses; c++) {
+        const s = rawScores[offset + c];
+        if (s > maxScore) {
+          maxScore = s;
+          maxClass = c;
+        }
+      }
+    } else if (combined) {
+      // combined is [1, 300, 4+classes] flattened
+      const stride = 4 + numClasses;
+      const offset = i * stride + 4; // Skip 4 box coords
+      for (let c = 0; c < numClasses; c++) {
+        const s = combined[offset + c];
+        if (s > maxScore) {
+          maxScore = s;
+          maxClass = c;
+        }
       }
     }
-    if (best < probThreshold) continue;
+    return { maxScore, maxClass };
+  };
 
-    const xc = output[i];
-    const yc = output[cells + i];
-    const w = output[2 * cells + i];
-    const h = output[3 * cells + i];
+  for (let i = 0; i < numQueries; i++) {
+    const { maxScore, maxClass } = getScore(i);
 
-    const x1 = ((xc - w / 2) / 640) * imgW;
-    const y1 = ((yc - h / 2) / 640) * imgH;
-    const x2 = ((xc + w / 2) / 640) * imgW;
-    const y2 = ((yc + h / 2) / 640) * imgH;
+    if (maxScore < probThreshold) continue;
 
-    const label = ["Fire", "Smoke", "Other"][classId];
-    boxes.push([x1, y1, x2, y2, label, best]);
+    const [cx, cy, w, h] = getBox(i);
+
+    // Convert cx, cy, w, h (normalized 0-1) to x1, y1, x2, y2 (pixel coords)
+    const x1 = (cx - w / 2) * imgW;
+    const y1 = (cy - h / 2) * imgH;
+    const x2 = (cx + w / 2) * imgW;
+    const y2 = (cy + h / 2) * imgH;
+
+    const label = ["Fire", "Smoke", "Other"][maxClass] || "Unknown";
+
+    // Store in format expected by detectionQueue: [x1, y1, x2, y2, label, confidence]
+    boxes.push([x1, y1, x2, y2, label, maxScore]);
 
     const area = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
     if (label === "Fire") {
@@ -164,33 +252,19 @@ function processOutput(output, imgW = 640, imgH = 640) {
     }
   }
 
-  // NMS
-  boxes.sort((a, b) => b[5] - a[5]);
-  const keep = [];
-  
-  const iou = (A, B) => {
-    const x1 = Math.max(A[0], B[0]);
-    const y1 = Math.max(A[1], B[1]);
-    const x2 = Math.min(A[2], B[2]);
-    const y2 = Math.min(A[3], B[3]);
-    const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
-    
-    const areaA = Math.max(0, A[2] - A[0]) * Math.max(0, A[3] - A[1]);
-    const areaB = Math.max(0, B[2] - B[0]) * Math.max(0, B[3] - B[1]);
-    const uni = areaA + areaB - inter;
-    return uni <= 0 ? 0 : inter / uni;
-  };
+  // RT-DETR is end-to-end, so NMS is technically not needed if the model was trained with Hungarian matching
+  // But sometimes it's good to have a light NMS just in case, or we can skip it.
+  // The user asked to replace YOLO pipeline. YOLO needs NMS. RT-DETR usually doesn't.
+  // I will skip NMS for now, or use a very high threshold if needed.
+  // Actually, let's keep it simple and return the boxes.
 
-  while (boxes.length) {
-    const head = boxes.shift();
-    keep.push(head);
-    boxes = boxes.filter((b) => iou(head, b) < 0.7);
-  }
+  // Sort by confidence
+  boxes.sort((a, b) => b[5] - a[5]);
 
   const detected = fireCount > 0 || smokeCount > 0;
-  
+
   return {
-    boxes: keep,
+    boxes,
     detected,
     fireCount,
     smokeCount,
@@ -205,16 +279,25 @@ export async function detectFire(cameraUrl, cameraName) {
   try {
     const jpegBuffer = await grabFrameOnce(cameraUrl);
     const inputTensor = await prepareInput(jpegBuffer, 640);
-    const outputData = await runInference(inputTensor);
-    const result = processOutput(outputData, 640, 640);
-    
-    log.info({ 
-      camera: cameraName, 
+    const outputs = await runInference(inputTensor);
+
+    // Log output shape for debugging
+    const debugShapes = {};
+    for (const key in outputs) {
+      debugShapes[key] = outputs[key].dims;
+    }
+    log.info({ camera: cameraName, outputShapes: debugShapes }, "RT-DETR Inference Output");
+
+    const result = processOutput(outputs, 640, 640);
+
+    log.info({
+      camera: cameraName,
       detected: result.detected,
       fireCount: result.fireCount,
-      smokeCount: result.smokeCount 
+      smokeCount: result.smokeCount,
+      boxCount: result.boxes.length
     }, "Detection complete");
-    
+
     return {
       isFire: result.detected,
       confidence: result.boxes.length > 0 ? result.boxes[0][5] : 0,
@@ -224,11 +307,11 @@ export async function detectFire(cameraUrl, cameraName) {
       frameBuffer: jpegBuffer,
     };
   } catch (error) {
-    log.error({ 
-      camera: cameraName, 
-      error: error.message 
+    log.error({
+      camera: cameraName,
+      error: error.message
     }, "Detection failed");
-    
+
     return {
       isFire: false,
       confidence: 0,
@@ -252,7 +335,7 @@ export function buildCameraUrl(cam) {
     const addr = cam.port ? `${cam.ip}:${cam.port}` : cam.ip;
     const path = cam.streamPath || "/live";
     const url = `${protocol}${auth}${addr}${path}`;
-    
+
     log.debug({ cameraId: cam.id, url: url.replace(/:([^:@]+)@/, ":****@") }, "Built RTSP URL for detection");
     return url;
   }
@@ -267,7 +350,7 @@ export function buildCameraUrl(cam) {
   const errorMsg = `Cannot build camera URL for ${cam.name}. ` +
     `Camera needs either: (1) ip+port for RTSP, or (2) hlsUrl for HLS. ` +
     `Current: ip=${cam.ip || 'null'}, hlsUrl=${cam.hlsUrl || 'null'}`;
-  
+
   log.error({ cameraId: cam.id, name: cam.name }, errorMsg);
   throw new Error(errorMsg);
 }

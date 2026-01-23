@@ -943,6 +943,7 @@ async function extractMultipleFramesLocal(camera, frameInterval) {
             fireCount: result.fireCount,
             smokeCount: result.smokeCount,
             boxes: result.boxes.length,
+            firstBox: result.boxes.length > 0 ? result.boxes[0] : null, // DEBUG: Show first box
           },
           `🔥 LOCAL Frame ${i + 1}/${FRAMES_PER_CHECK}: Fire detected`
         );

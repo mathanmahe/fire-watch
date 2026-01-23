@@ -90,16 +90,18 @@
 //   return { running: !!backendProcess };
 // });
 
-const { app, BrowserWindow, Menu, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, shell, dialog } = require("electron");
 const fs = require("fs");
 const path = require("path");
-const { spawn } = require("child_process");
+const { spawn, exec } = require("child_process");
+const util = require("util");
+const execPromise = util.promisify(exec);
 
 // ✅ Logging setup
 function ensureDir(p) {
   try {
     fs.mkdirSync(p, { recursive: true });
-  } catch {}
+  } catch { }
 }
 
 function logPaths() {
@@ -139,6 +141,50 @@ const isDev = !app.isPackaged;
 
 mlog("🔍 isDev:", isDev);
 mlog("🔍 app.isPackaged:", app.isPackaged);
+
+async function checkDocker() {
+  try {
+    await execPromise("docker --version");
+    try {
+      await execPromise("docker info");
+      return "running";
+    } catch {
+      return "not_running";
+    }
+  } catch {
+    return "not_installed";
+  }
+}
+
+async function startDocker() {
+  mlog("Attempting to start Docker...");
+  if (process.platform === "darwin") {
+    await execPromise("open -a Docker");
+  } else if (process.platform === "win32") {
+    const dockerPath = "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe";
+    try {
+      // Use 'start' to launch without waiting for the process to exit
+      await execPromise(`start "" "${dockerPath}"`);
+    } catch (e) {
+      mlog("Failed to start via full path, trying generic entry", e);
+      // Fallback
+      await execPromise('start "" "Docker Desktop"');
+    }
+  } else {
+    throw new Error("Unsupported platform for auto-starting Docker");
+  }
+}
+
+async function waitForDocker() {
+  let retries = 60; // Wait up to 60 seconds
+  while (retries > 0) {
+    const status = await checkDocker();
+    if (status === "running") return;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    retries--;
+  }
+  throw new Error("Docker failed to start in time");
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -255,7 +301,47 @@ function startBackend() {
   mlog("Backend PATH:", newPath);
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  mlog("Checking Docker status...");
+  const dockerStatus = await checkDocker();
+  mlog("Docker status:", dockerStatus);
+
+  if (dockerStatus === "not_installed") {
+    const { response } = await dialog.showMessageBox({
+      type: "error",
+      title: "Docker Not Found",
+      message:
+        "Docker is required to run this application. Please install Docker and try again.",
+      buttons: ["Install Docker", "Quit"],
+      defaultId: 0,
+    });
+
+    if (response === 0) {
+      shell.openExternal("https://www.docker.com/products/docker-desktop/");
+    }
+    app.quit();
+    return;
+  }
+
+  if (dockerStatus === "not_running") {
+    mlog("Docker is installed but not running. Attempting to start...");
+    // Optional: Show a splash screen or loading window here
+    try {
+      await startDocker();
+      mlog("Waiting for Docker to be ready...");
+      await waitForDocker();
+      mlog("Docker started successfully.");
+    } catch (e) {
+      mlog("Failed to start Docker:", e);
+      dialog.showErrorBox(
+        "Docker Error",
+        "Failed to start Docker. Please start Docker manually and restart the app."
+      );
+      app.quit();
+      return;
+    }
+  }
+
   createWindow();
   startBackend();
 
